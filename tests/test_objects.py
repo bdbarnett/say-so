@@ -1,6 +1,17 @@
 import unittest
 
-from sayso import AlbumPage, Artist, HydrationError, Page, Playlist, PlaylistTrackPage, Track, User, set_client
+from sayso import (
+    AlbumPage,
+    Artist,
+    CurrentlyPlaying,
+    HydrationError,
+    Page,
+    Playlist,
+    PlaylistTrackPage,
+    Track,
+    User,
+    set_client,
+)
 from sayso.transport import TransportError
 
 
@@ -15,6 +26,18 @@ class _FakeClient:
 
 
 class SpotifyObjectHydrationTest(unittest.TestCase):
+    def test_current_playback_preserves_smart_shuffle(self):
+        playback = CurrentlyPlaying(
+            {
+                "shuffle_state": True,
+                "smart_shuffle": True,
+                "repeat_state": "context",
+            }
+        )
+        self.assertTrue(playback.shuffle_state)
+        self.assertTrue(playback.smart_shuffle)
+        self.assertEqual(playback.repeat_state, "context")
+
     def test_missing_field_hydrates_fetchable_object(self):
         client = _FakeClient(
             {

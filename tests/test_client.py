@@ -1,6 +1,7 @@
 import unittest
 
 from sayso import SpotifyClient
+from sayso.local import EarfulAdapter
 from sayso.auth import ClientCredentialsAuth
 from sayso.transport import TransportError
 
@@ -61,6 +62,61 @@ class SpotifyClientRetryTest(unittest.TestCase):
             client_module.get_json = original
 
         self.assertEqual(context.exception.status, 401)
+
+
+class _EarfulDevice:
+    name = "earful"
+    device_id = "earful-id"
+    active = True
+    playing = True
+    volume = 42
+    track = "spotify:track:fixture"
+
+    def __init__(self):
+        self.calls = []
+
+    def pause(self): self.calls.append(("pause",))
+    def next(self): self.calls.append(("next",))
+    def prev(self): self.calls.append(("prev",))
+    def seek(self, value): self.calls.append(("seek", value))
+    def play(self, value=None): self.calls.append(("play", value))
+
+
+class LocalEarfulBridgeTest(unittest.TestCase):
+    def test_controls_use_explicit_local_device(self):
+        device = _EarfulDevice()
+        client = SpotifyClient(access_token="unused", auto_set=False, local_device=device)
+        client.pause(device_id="earful-id")
+        client.next_track(device_id="earful")
+        client.seek(1234, device_id="earful-id")
+        self.assertEqual(device.calls, [("pause",), ("next",), ("seek", 1234)])
+
+    def test_other_device_keeps_web_api_path(self):
+        device = _EarfulDevice()
+        client = SpotifyClient(access_token="unused", auto_set=False, local_device=device)
+        original = client._put_json
+        calls = []
+        client._put_json = lambda *args, **kwargs: calls.append((args, kwargs))
+        client.pause(device_id="other")
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(device.calls, [])
+
+    def test_local_play_maps_context_and_position(self):
+        class Device:
+            def __init__(self):
+                self.calls = []
+
+            def play(self, **kwargs):
+                self.calls.append(kwargs)
+
+        device = Device()
+        adapter = EarfulAdapter(device)
+        adapter.play(context_uri="spotify:playlist:agents", position_ms=60000)
+        adapter.play(uris=["spotify:track:fixture"], position_ms=1234)
+        self.assertEqual(device.calls, [
+            {"context": "spotify:playlist:agents", "position": 60000},
+            {"uri": "spotify:track:fixture", "position": 1234},
+        ])
 
 
 if __name__ == "__main__":

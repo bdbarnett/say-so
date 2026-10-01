@@ -48,6 +48,7 @@ from .transport import (
     put_body,
     put_json,
 )
+from .local import EarfulAdapter, discover as discover_local
 
 
 class SpotifyClientError(Exception):
@@ -68,9 +69,13 @@ class SpotifyClient:
         scope=None,
         authenticate_if_needed=True,
         auth_state="sayso",
+        local_device=None,
     ):
         self.access_token = access_token
         self.auth = auth
+        self.local = local_device if isinstance(local_device, EarfulAdapter) else (
+            EarfulAdapter(local_device) if local_device is not None else discover_local()
+        )
 
         if self.auth is None and access_token is None:
             if client_id is not None and client_secret is not None:
@@ -144,6 +149,13 @@ class SpotifyClient:
             return self.access_token
         if self.auth is not None:
             return self.auth.token()
+        return None
+
+    def _local(self, device_id=None):
+        if self.local is None:
+            return None
+        if device_id is None or device_id == self.local.device_id or device_id == self.local.name:
+            return self.local
         return None
 
     def _one(self, cls, path, query=None):
@@ -442,6 +454,9 @@ class SpotifyClient:
         return self._put_json("/me/player", data=data)
 
     def play(self, device_id=None, context_uri=None, uris=None, offset=None, position_ms=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.play(context_uri=context_uri, uris=uris, position_ms=position_ms)
         data = {}
         self._add_query(data, "context_uri", context_uri)
         if uris is not None:
@@ -451,15 +466,27 @@ class SpotifyClient:
         return self._put_json("/me/player/play", data=data, query=self._device_query(device_id))
 
     def pause(self, device_id=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.pause()
         return self._put_json("/me/player/pause", query=self._device_query(device_id))
 
     def next_track(self, device_id=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.next()
         return self._post_json("/me/player/next", query=self._device_query(device_id))
 
     def previous_track(self, device_id=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.previous()
         return self._post_json("/me/player/previous", query=self._device_query(device_id))
 
     def seek(self, position_ms, device_id=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.seek(position_ms)
         query = {"position_ms": position_ms}
         self._add_query(query, "device_id", device_id)
         return self._put_json("/me/player/seek", query=query)
@@ -475,6 +502,9 @@ class SpotifyClient:
         return self._put_json("/me/player/shuffle", query=query)
 
     def volume(self, volume_percent, device_id=None):
+        local = self._local(device_id)
+        if local is not None:
+            return local.set_volume(volume_percent)
         query = {"volume_percent": volume_percent}
         self._add_query(query, "device_id", device_id)
         return self._put_json("/me/player/volume", query=query)
@@ -487,9 +517,12 @@ class SpotifyClient:
     def devices(self):
         data = self._get_json("/me/player/devices")
         devices = data.get("devices")
-        if devices is None:
-            return ()
-        return [Device(item) for item in devices]
+        result = [] if devices is None else [Device(item) for item in devices]
+        if self.local is not None and self.local.device_id is not None:
+            local_state = self.local.state()
+            if not any(getattr(item, "id", None) == self.local.device_id for item in result):
+                result.append(Device(local_state))
+        return result
 
     def recently_played(self, limit=None, after=None, before=None):
         query = {}

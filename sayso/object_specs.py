@@ -421,6 +421,9 @@ SPOTIFY_OBJECT_SPECS = (
             {"field": "device", "kind": "object", "class": "Device"},
             {"field": "repeat_state"},
             {"field": "shuffle_state"},
+            # Returned by the live Web API although absent from the public
+            # schema. Keep it distinct from the ordinary shuffle boolean.
+            {"field": "smart_shuffle"},
             {"field": "context", "kind": "object", "class": "Context"},
             {"field": "timestamp"},
             {"field": "progress_ms"},

@@ -35,6 +35,7 @@ from .auth import (
     USER_PROFILE_SCOPES,
 )
 from .client import SpotifyClient, SpotifyClientError, snapshot_id
+from .local import EarfulAdapter
 from .object_specs import SPOTIFY_OBJECT_SPECS
 from .objects import (
     HydrationError,
@@ -60,6 +61,7 @@ __all__ = (
     "SpotifyConfigError",
     "SpotifyClient",
     "SpotifyClientError",
+    "EarfulAdapter",
     "HydrationError",
     "SpotifyObject",
     "get_client",
