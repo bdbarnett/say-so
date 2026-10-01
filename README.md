@@ -1,4 +1,4 @@
-# spotapi
+# sayso
 
 Small Spotify Web API client experiments for CPython, MicroPython, and CircuitPython.
 
@@ -12,21 +12,21 @@ The current focus is a lightweight object layer:
 - Manual bearer token, Client Credentials auth, and Authorization Code auth helpers
 - Local config files for app credentials and optional write-example settings
 - `SpotifyClient()` loads config and runs browser OAuth on first use when needed
-- Transport functions isolated in `spotapi.transport`
+- Transport functions isolated in `sayso.transport`
 
 OAuth Authorization Code helpers include URL generation, callback parsing,
 token exchange, refresh handling, PKCE helpers, and CPython interactive login
-through `spotapi.auth`.
+through `sayso.auth`.
 
 ## Setup
 
 Copy the example config and add your Spotify app credentials:
 
 ```powershell
-copy spotapi.local.json.example spotapi.local.json
+copy sayso.local.json.example sayso.local.json
 ```
 
-Edit `spotapi.local.json`:
+Edit `sayso.local.json`:
 
 ```json
 {
@@ -46,14 +46,14 @@ python scripts\configure.py
 
 Local files are ignored by Git:
 
-- `spotapi.local.json` — app credentials
+- `sayso.local.json` — app credentials
 - `tokens.json` — saved OAuth access/refresh tokens after browser login
 - `examples/write_examples.json` — settings for write examples (optional)
 
 ## Quick Start
 
 ```python
-from spotapi import SpotifyClient
+from sayso import SpotifyClient
 
 client = SpotifyClient()
 user = client.me()
@@ -65,7 +65,7 @@ print(user)
 `print()` on a Spotify object shows its raw data as formatted JSON. The REPL
 still uses the compact `repr`, for example `<PrivateUser id='...'>`.
 
-With `spotapi.local.json` in place, `SpotifyClient()` loads your app
+With `sayso.local.json` in place, `SpotifyClient()` loads your app
 credentials, reuses `tokens.json` when available, and runs PKCE browser login on
 first use when needed.
 
@@ -75,7 +75,7 @@ not open automatically.
 You can also pass credentials or auth explicitly:
 
 ```python
-from spotapi import AuthorizationCodeAuth, SpotifyClient
+from sayso import AuthorizationCodeAuth, SpotifyClient
 
 client = SpotifyClient(
     client_id="your-client-id",
@@ -119,29 +119,29 @@ print(playlist.name, track.name, artist.name, album.name)
 
 ## Discovery Scripts
 
-Run from the project root after `spotapi.local.json` is configured. Each script
+Run from the project root after `sayso.local.json` is configured. Each script
 adds `os.getcwd()` to `sys.path` and calls `SpotifyClient()` with no arguments.
 
 ```powershell
-python scripts\spotapi_simpletest.py
-python scripts\spotapi_playlist_discovery.py
-python scripts\spotapi_album_discovery.py
-python scripts\spotapi_saved_discovery.py
+python scripts\sayso_simpletest.py
+python scripts\sayso_playlist_discovery.py
+python scripts\sayso_album_discovery.py
+python scripts\sayso_saved_discovery.py
 ```
 
 | Script | Object graph exercised |
 |--------|------------------------|
-| `spotapi_simpletest.py` | `PrivateUser` via `me()` |
-| `spotapi_playlist_discovery.py` | Owned playlist → `items` → track → artist → `artist.albums[0]` |
-| `spotapi_album_discovery.py` | Saved track → album → `tracks` paging and lazy album fields |
-| `spotapi_saved_discovery.py` | `SavedTrack` / `SavedAlbum` wrappers and `next_page()` |
+| `sayso_simpletest.py` | `PrivateUser` via `me()` |
+| `sayso_playlist_discovery.py` | Owned playlist → `items` → track → artist → `artist.albums[0]` |
+| `sayso_album_discovery.py` | Saved track → album → `tracks` paging and lazy album fields |
+| `sayso_saved_discovery.py` | `SavedTrack` / `SavedAlbum` wrappers and `next_page()` |
 
-`spotapi_playlist_discovery.py` skips followed playlists (Spotify returns 403 on
+`sayso_playlist_discovery.py` skips followed playlists (Spotify returns 403 on
 `playlist_items` when the user is not the owner or a collaborator).
 
 ## Smoke Tests
 
-After creating `spotapi.local.json`:
+After creating `sayso.local.json`:
 
 ```powershell
 python scripts\smoke_client_credentials.py
@@ -175,12 +175,12 @@ python examples\refresh_token_saved_tracks.py
 ```
 
 `custom_transport.py` fetches available markets with Client Credentials. HTTP is
-chosen automatically in `spotapi.transport` from `requests` or a CircuitPython
+chosen automatically in `sayso.transport` from `requests` or a CircuitPython
 `adafruit_requests` session.
 
 ### Playback Controls
 
-`scripts/spotapi_playback.py` is an interactive terminal demo. It prints
+`scripts/sayso_playback.py` is an interactive terminal demo. It prints
 a key map, then loops on single keystrokes to call playback methods such as
 `play()`, `pause()`, `next_track()`, `seek()`, `volume()`, and `queue()`, plus
 parameterless read methods such as `me()`, `saved_tracks()`, and
@@ -189,7 +189,7 @@ Requires Premium and an active Spotify device for playback controls. Uses raw
 terminal input (`termios`) and is intended for Linux/WSL/macOS terminals.
 
 ```powershell
-python scripts\spotapi_playback.py
+python scripts\sayso_playback.py
 ```
 
 Many API paths use descriptive method names rather than URL paths. For example,
@@ -226,7 +226,7 @@ Optional fields in `examples/write_examples.json` include `playlist_name`,
 ### Manual OAuth Examples
 
 These examples demonstrate lower-level OAuth steps using values from
-`spotapi.local.json`:
+`sayso.local.json`:
 
 ```powershell
 python examples\authorization_code_url.py
@@ -238,13 +238,13 @@ python examples\authorization_code_pkce_local_server.py
 ```
 
 For the manual exchange examples, add temporary fields to
-`spotapi.local.json`:
+`sayso.local.json`:
 
 ```json
 {
   "callback_url": "http://127.0.0.1:8080/?code=...&state=...",
   "code_verifier": "...",
-  "auth_state": "spotapi-pkce-example"
+  "auth_state": "sayso-pkce-example"
 }
 ```
 
@@ -260,7 +260,7 @@ control, library browse, queue, search, and cover art. It runs on CPython and
 MicroPython, Linux and Windows, on the
 [PyDevices](https://github.com/PyDevices/pydevices) stack. See
 [`apps/spotify_remote/README.md`](apps/spotify_remote/README.md) for setup;
-`spotapi.local.json` and `tokens.json` live in the app directory, not the repo
+`sayso.local.json` and `tokens.json` live in the app directory, not the repo
 root.
 
 ## Tests
@@ -275,7 +275,7 @@ python -m unittest discover -s tests -v
 - `tests/test_transport.py` — offline transport response/error and bodyless POST tests.
 - `tests/test_live.py` — live integration tests against the Spotify Web API
   (`me`, playlists, saved paging, `artist.albums`, recently played). Skipped
-  when `spotapi.local.json` is missing.
+  when `sayso.local.json` is missing.
 
 ## Packaging
 
@@ -285,7 +285,7 @@ Build local source and wheel distributions with:
 python -m build
 ```
 
-The wheel contains only the `spotapi` runtime package. The source distribution
+The wheel contains only the `sayso` runtime package. The source distribution
 also includes examples, scripts, tests, and project notes. Generated draft specs
 and local config/token files are excluded.
 
@@ -309,7 +309,7 @@ flags (hydration is driven by `fetch_method` on fetchable types).
 
 ## Endpoint Coverage
 
-Compare `SpotifyClient` to Spotify's OpenAPI paths by parsing `spotapi/client.py`:
+Compare `SpotifyClient` to Spotify's OpenAPI paths by parsing `sayso/client.py`:
 
 ```powershell
 python scripts\endpoint_coverage.py

@@ -1,6 +1,6 @@
 # spotify_remote
 
-LVGL touch UI for Spotify playback control, built on [spotapi](../../) and
+LVGL touch UI for Spotify playback control, built on [sayso](../../) and
 [lvgl_micropython](https://github.com/lvgl-micropython/lvgl_micropython).
 
 Target display: 1024x600 capacitive touch. Hardware-specific display and input
@@ -12,7 +12,7 @@ Windows) under the PyDevices stack.
 | File | Role |
 |------|------|
 | `main.py` | Entry point: auth, playback polling, event loop |
-| `spotify_ctrl.py` | spotapi wrapper (no LVGL) |
+| `spotify_ctrl.py` | sayso wrapper (no LVGL) |
 | `ui.py` | LVGL widgets; root screen via `scr = lv.screen_active()` |
 | `config.py` | Tunable limits (cover-art cache size, library list size) |
 | `artwork_cache.py` | Downloads and caches cover art from Spotify CDN URLs |
@@ -24,8 +24,8 @@ Windows) under the PyDevices stack.
 
 ## Prerequisites
 
-- `spotapi` package on `sys.path` (for example `~/.micropython/lib/spotapi` → repo `spotapi/`)
-- `spotapi.local.json` and `tokens.json` in **this directory** (see [Config](#config))
+- `sayso` package on `sys.path` (for example `~/.micropython/lib/sayso` → repo `sayso/`)
+- `sayso.local.json` and `tokens.json` in **this directory** (see [Config](#config))
 - Spotify app scopes: user profile, playback read/write, playlist read/write,
   library read/write, and `user-follow-read` for followed artists
 - An active Spotify playback device for now-playing and transport controls
@@ -35,7 +35,7 @@ Windows) under the PyDevices stack.
 
 On startup the app compares required scopes to `tokens.json`. If scopes are
 missing, it opens the Spotify authorize URL automatically (same flow as
-`spotapi` examples) and saves the updated token. Access tokens are also
+`sayso` examples) and saves the updated token. Access tokens are also
 refreshed automatically via the refresh token when they expire.
 
 ## Config
@@ -45,8 +45,8 @@ from the process cwd. Copy or symlink secrets here:
 
 ```bash
 cd apps/spotify_remote
-cp ../../spotapi.local.json.example spotapi.local.json
-# edit spotapi.local.json, run desktop OAuth once, then copy or link tokens.json
+cp ../../sayso.local.json.example sayso.local.json
+# edit sayso.local.json, run desktop OAuth once, then copy or link tokens.json
 ln -s ../../tokens.json tokens.json   # optional: reuse repo-root tokens
 ```
 
@@ -76,10 +76,10 @@ Restart the app after changing `config.py`.
 Runs on CPython and MicroPython with the released PyDevices stack installed
 (`pydevices-desktop` and `pydevices-lvgl` from pip on CPython; the mip desktop
 board in `~/.micropython/lib` on MicroPython). `main.py` puts the repo root
-and `apps/` on `sys.path` itself, so run it from the spotapi repo root:
+and `apps/` on `sys.path` itself, so run it from the sayso repo root:
 
 ```bash
-cd /path/to/spotapi
+cd /path/to/sayso
 micropython -X heapsize=8M apps/spotify_remote/main.py
 python apps/spotify_remote/main.py           # or micropython.exe / python.exe on Windows
 ```
@@ -93,11 +93,11 @@ firmware, LVGL's TJPGD on CPython. Without one the view shows
 
 ## Frozen into firmware
 
-[`manifest.py`](../../manifest.py) at the repo root freezes spotapi and this
+[`manifest.py`](../../manifest.py) at the repo root freezes sayso and this
 app. [`manifests/kitchen-sink-earful.py`](../../manifests/kitchen-sink-earful.py)
 adds them to the PyDevices kitchen sink and earful, for a `micropython.exe`
 (or board image) that is both the remote and the speaker. Run it from any
-directory holding `spotapi.local.json` and `tokens.json`; the art caches are
+directory holding `sayso.local.json` and `tokens.json`; the art caches are
 written there too:
 
 ```bash
@@ -117,7 +117,7 @@ usermod, the remote can also be the speaker. Give it a Connect name as the
 first argument, or set `LOCAL_SPEAKER` in `config.py`:
 
 ```bash
-cd /path/to/spotapi
+cd /path/to/sayso
 micropython.exe apps/spotify_remote/main.py earful-win
 ```
 
@@ -138,8 +138,8 @@ the remote says what it does offer and runs without a speaker.
 ## Hardware (ESP32 and other MCUs)
 
 1. Flash lvgl_micropython for your board with matching `DISPLAY` and `INDEV`.
-2. Copy `spotapi/` and this app to the device.
-3. Place `spotapi.local.json` and `tokens.json` in this app directory, or
+2. Copy `sayso/` and this app to the device.
+3. Place `sayso.local.json` and `tokens.json` in this app directory, or
    construct auth with an in-memory refresh token (no browser OAuth on-device).
 4. In `main.py`, replace the driver comment block with your display/touch init
    (bus, frame buffers, `display.init()`, touch `indev`, backlight, rotation).

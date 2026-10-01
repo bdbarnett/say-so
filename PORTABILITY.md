@@ -1,6 +1,6 @@
 # Portability Notes
 
-`spotapi` is intended to keep runtime-specific behavior narrow and easy to
+`sayso` is intended to keep runtime-specific behavior narrow and easy to
 replace.
 
 ## Portable Core
@@ -9,20 +9,20 @@ These modules should stay free of CPython-only imports at import time and should
 run under CPython, MicroPython, and CircuitPython when the runtime has enough
 memory:
 
-- `spotapi.objects`
-- `spotapi.object_specs`
-- `spotapi.client`
-- `spotapi.auth`
+- `sayso.objects`
+- `sayso.object_specs`
+- `sayso.client`
+- `sayso.auth`
 
-The client delegates all HTTP behavior to `spotapi.transport`.
+The client delegates all HTTP behavior to `sayso.transport`.
 
-On MicroPython, import submodules directly (`from spotapi.auth import ...`,
-`from spotapi.client import SpotifyClient`) rather than re-exports from
-`spotapi/__init__.py`, which may not resolve on constrained runtimes.
+On MicroPython, import submodules directly (`from sayso.auth import ...`,
+`from sayso.client import SpotifyClient`) rather than re-exports from
+`sayso/__init__.py`, which may not resolve on constrained runtimes.
 
 ## Object Layer
 
-`spotapi.objects` builds spec-driven classes at import time:
+`sayso.objects` builds spec-driven classes at import time:
 
 - **`SpotifyObject._get()`** — returns embedded data; hydrates fetchable types once
   when a field key is absent.
@@ -44,7 +44,7 @@ no `fetch_method` because `GET /users/{id}` is unavailable in Dev Mode.
 
 ## Transport Boundary
 
-`spotapi.transport` owns HTTP and encoding differences:
+`sayso.transport` owns HTTP and encoding differences:
 
 - Automatic HTTP backend selection through `_find_requests()`
 - `requests` on CPython and MicroPython
@@ -57,16 +57,16 @@ no `fetch_method` because `GET /users/{id}` is unavailable in Dev Mode.
 - Bodyless POST/PUT/PATCH/DELETE requests send `Content-Length: 0`
 - Response cleanup through `close()` or `deinit()`
 
-When `spotapi.transport` is imported, it sets `requests = _find_requests()`.
-Other modules can use `from spotapi.transport import requests` if they need the
+When `sayso.transport` is imported, it sets `requests = _find_requests()`.
+Other modules can use `from sayso.transport import requests` if they need the
 resolved HTTP client.
 
-To mock HTTP in tests, replace `spotapi.transport.requests` before making API
+To mock HTTP in tests, replace `sayso.transport.requests` before making API
 calls.
 
 ## Auth
 
-`spotapi.auth` contains OAuth mechanics and uses `spotapi.transport` for network
+`sayso.auth` contains OAuth mechanics and uses `sayso.transport` for network
 requests. It imports only lightweight standard modules at import time. PKCE and
 Basic auth helpers import optional modules inside helper functions:
 
@@ -77,9 +77,9 @@ Basic auth helpers import optional modules inside helper functions:
 If a runtime does not provide one of those modules, the relevant helper raises
 `SpotifyAuthError`.
 
-`spotapi.auth` also contains:
+`sayso.auth` also contains:
 
-- `spotapi.local.json` load/save helpers
+- `sayso.local.json` load/save helpers
 - `TokenCache` for saving OAuth tokens to `tokens.json`
 - Interactive browser OAuth helpers such as `authorize_with_local_server()`
 
@@ -91,7 +91,7 @@ otherwise. On constrained devices, construct `AuthorizationCodeAuth` or
 
 ## Config-Based Client
 
-`SpotifyClient()` with no credentials reads `spotapi.local.json`, reuses
+`SpotifyClient()` with no credentials reads `sayso.local.json`, reuses
 `tokens.json` when available, and runs interactive browser OAuth on first use
 when needed. That path is intended for CPython development workflows, examples,
 scripts, and live tests.
@@ -106,8 +106,8 @@ embedded runtimes:
 
 - `scripts/`
 - `tests/`
-- examples that load `spotapi.local.json` or call `SpotifyClient()` with no args
-- `scripts/spotapi_playback.py` (raw terminal keyboard input)
+- examples that load `sayso.local.json` or call `SpotifyClient()` with no args
+- `scripts/sayso_playback.py` (raw terminal keyboard input)
 - examples that load `examples/write_examples.json`
 
 Portable applications can still use the core client, auth, transport, and object
@@ -123,18 +123,18 @@ layers without the local config file or interactive OAuth helpers.
 | CircuitPython | Embedded hardware | Not yet validated |
 
 On embedded targets, pass credentials and tokens explicitly to `SpotifyClient`
-or `AuthorizationCodeAuth` rather than relying on `spotapi.local.json`,
+or `AuthorizationCodeAuth` rather than relying on `sayso.local.json`,
 browser OAuth, or `tokens.json` in the project root.
 
 Suggested hardware smoke commands (from the repo root on the device):
 
 ```text
-micropython scripts/spotapi_simpletest.py
-micropython scripts/spotapi_playlist_discovery.py
+micropython scripts/sayso_simpletest.py
+micropython scripts/sayso_playlist_discovery.py
 ```
 
 CircuitPython requires `wifi`, `socketpool`, `ssl`, and `adafruit_requests` for
-HTTP. Copy the `spotapi` package and supply a pre-obtained access or refresh token.
+HTTP. Copy the `sayso` package and supply a pre-obtained access or refresh token.
 
 ## Client and Token Conventions
 
@@ -151,7 +151,7 @@ Spotify restricted Development Mode apps starting February 2026. See Spotify's
 [February 2026 migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide)
 for the authoritative list.
 
-Practical impact on `spotapi`:
+Practical impact on `sayso`:
 
 - **`GET /me`** — use `client.me()` for the authenticated user's profile.
 - **`GET /users/{id}`** — removed for Dev Mode; `client.user()` may return 403.

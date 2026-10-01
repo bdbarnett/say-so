@@ -1,8 +1,8 @@
 import unittest
 
-from spotapi import SpotifyClient
-from spotapi.auth import ClientCredentialsAuth
-from spotapi.transport import TransportError
+from sayso import SpotifyClient
+from sayso.auth import ClientCredentialsAuth
+from sayso.transport import TransportError
 
 
 class _CountingAuth(ClientCredentialsAuth):
@@ -21,7 +21,7 @@ class _CountingAuth(ClientCredentialsAuth):
 
 class SpotifyClientRetryTest(unittest.TestCase):
     def test_retries_once_after_401_when_auth_is_available(self):
-        import spotapi.client as client_module
+        import sayso.client as client_module
 
         auth = _CountingAuth()
         client = SpotifyClient(auth=auth, auto_set=False)
@@ -45,7 +45,7 @@ class SpotifyClientRetryTest(unittest.TestCase):
         self.assertEqual(auth.refresh_count, 1)
 
     def test_does_not_retry_401_without_auth(self):
-        import spotapi.client as client_module
+        import sayso.client as client_module
 
         client = SpotifyClient(access_token="static-token", auto_set=False)
 

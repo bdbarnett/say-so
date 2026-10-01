@@ -70,7 +70,7 @@ FETCH_METHODS = {
 PAGING_FIELDS = ("href", "limit", "next", "offset", "previous", "total")
 
 # Hand-curated page-backed properties. The OpenAPI artist/playlist objects do not
-# describe these fields; spotapi wires them to client page methods instead.
+# describe these fields; sayso wires them to client page methods instead.
 OBJECT_BY_KEY_OVERRIDES = {
     "Artist": (
         {
@@ -402,7 +402,7 @@ def schema_to_class_name(schema_name):
 
 def write_specs(path, specs):
     with open(path, "w", encoding="utf-8") as file:
-        file.write("# Generated draft. Review before copying into spotapi.object_specs.\n")
+        file.write("# Generated draft. Review before copying into sayso.object_specs.\n")
         file.write("#\n")
         file.write("# Hydration: do not emit per-field fetch flags. Types in FETCH_METHODS\n")
         file.write("# hydrate missing fields via SpotifyObject._get(); page-backed fields\n")

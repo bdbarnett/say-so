@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import AuthorizationCodeAuth, credentials_from_config, generate_code_verifier, load_config, redirect_uri_from_config, scopes_from_config
+from sayso import AuthorizationCodeAuth, credentials_from_config, generate_code_verifier, load_config, redirect_uri_from_config, scopes_from_config
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     )
 
     print("code_verifier:", code_verifier)
-    print(auth.authorize_url(state="spotapi-pkce-example", show_dialog=True))
+    print(auth.authorize_url(state="sayso-pkce-example", show_dialog=True))
 
 
 if __name__ == "__main__":

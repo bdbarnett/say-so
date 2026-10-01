@@ -6,7 +6,7 @@ second or more of CPU, so every tap in a remote cost one, and the remote felt
 stuck. This keeps one connection per host and reuses it until the server
 closes it, which is what a browser or a phone app does.
 
-Only what spotapi needs: GET/POST/PUT/DELETE with a body, ``Content-Length``
+Only what sayso needs: GET/POST/PUT/DELETE with a body, ``Content-Length``
 or chunked responses, and one transparent retry when a reused connection turns
 out to have been closed by the server while idle.
 """
@@ -120,7 +120,7 @@ def _loads_paged(data):
     return page
 
 
-_MARK_TEXT = "__spotapi_items_marker__"
+_MARK_TEXT = "__sayso_items_marker__"
 _MARK = b'"' + _MARK_TEXT.encode() + b'"'
 
 

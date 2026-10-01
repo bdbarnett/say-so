@@ -1,4 +1,4 @@
-# spotapi Roadmap
+# sayso Roadmap
 
 This project currently has a lightweight Spotify Web API object layer, auth helpers,
 transport helpers, read methods, selected write methods, examples, and live tests.
@@ -10,20 +10,20 @@ transport helpers, read methods, selected write methods, examples, and live test
 - Lazy hydration from simplified objects to full objects (`_get` / `_peek`)
 - `Page.__getitem__`, `CursorPaging`, and page-backed `object_by_key` properties
 - `Artist.albums` and `Playlist.items` wired to client page methods
-- Discovery scripts (`spotapi_*_discovery.py`) for object-graph walkthroughs
+- Discovery scripts (`sayso_*_discovery.py`) for object-graph walkthroughs
 - Offline object-layer unit tests in `tests/test_objects.py`
 - February 2026 Dev Mode API notes in `PORTABILITY.md`
 - `SpotifyObject.__str__()` pretty-prints raw object data for `print()`
 - Client Credentials auth
-- Authorization Code auth helpers consolidated in `spotapi.auth`
+- Authorization Code auth helpers consolidated in `sayso.auth`
 - PKCE verifier/challenge helpers
 - `TokenCache` for access/refresh token persistence
-- `spotapi.local.json` config file for app credentials
+- `sayso.local.json` config file for app credentials
 - `examples/write_examples.json` for optional write-example settings
-- `SpotifyClient()` config-file bootstrap from `spotapi.local.json`
+- `SpotifyClient()` config-file bootstrap from `sayso.local.json`
 - Automatic browser OAuth on first `SpotifyClient()` call when needed
 - OAuth error translation into `SpotifyAuthError`
-- CPython interactive OAuth flow in `spotapi.auth`
+- CPython interactive OAuth flow in `sayso.auth`
 - Manual callback URL parsing and lower-level OAuth examples
 - Automatic HTTP backend selection (`requests` or CircuitPython `adafruit_requests`)
 - JSON and raw-body write transports; non-JSON 2xx responses treated as success
@@ -31,7 +31,7 @@ transport helpers, read methods, selected write methods, examples, and live test
 - Write methods for saved-library items, follows, playlists, and playback controls
 - `SnapshotResult` for playlist mutation responses
 - Draft schema-to-object-spec generator script
-- Endpoint coverage report that parses `spotapi/client.py` and compares it to OpenAPI (`--map` prints path-to-method names)
+- Endpoint coverage report that parses `sayso/client.py` and compares it to OpenAPI (`--map` prints path-to-method names)
 - First-class client methods for all OpenAPI paths currently reported by Spotify's schema
 - Example scripts for client credentials, OAuth, user-library usage, playback controls, and guarded write calls
 - Live integration tests against the Spotify Web API (playlists, saved paging, artist albums, recently played)

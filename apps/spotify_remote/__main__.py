@@ -1,7 +1,7 @@
 """`micropython -m spotify_remote [speaker-name]`: run the remote.
 
 Frozen into a firmware (see the repo's manifest.py) this needs no files but
-spotapi.local.json and tokens.json in the directory it is run from.
+sayso.local.json and tokens.json in the directory it is run from.
 """
 
 from spotify_remote import main  # noqa: F401 -- main.py builds the app on import

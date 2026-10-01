@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import SpotifyClient, snapshot_id
+from sayso import SpotifyClient, snapshot_id
 from config import config_value, load_write_examples_config, require_write_examples
 
 

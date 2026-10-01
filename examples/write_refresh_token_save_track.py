@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import SpotifyClient
+from sayso import SpotifyClient
 from config import require_write_examples
 
 

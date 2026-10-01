@@ -1,8 +1,8 @@
-# MicroPython cannot import names re-exported from spotapi/__init__.py; use submodules.
+# MicroPython cannot import names re-exported from sayso/__init__.py; use submodules.
 import os
 import time
 
-from spotapi.auth import (
+from sayso.auth import (
     AuthorizationCodeAuth,
     SpotifyAuthError,
     TokenCache,
@@ -18,8 +18,8 @@ from spotapi.auth import (
     PLAYLIST_WRITE_SCOPES,
     USER_PROFILE_SCOPES,
 )
-from spotapi.client import SpotifyClient
-from spotapi.transport import TransportError
+from sayso.client import SpotifyClient
+from sayso.transport import TransportError
 from spotify_remote import artwork_cache
 from spotify_remote import config as remote_config
 from spotify_remote import genre_seeds
@@ -177,7 +177,7 @@ def _config_path(name):
     return app_path
 
 
-CONFIG_PATH = _config_path("spotapi.local.json")
+CONFIG_PATH = _config_path("sayso.local.json")
 TOKEN_PATH = _config_path("tokens.json")
 ART_CACHE_PATH = _join_dir(_data_dir(), "art_cache")
 THUMB_CACHE_PATH = _join_dir(_data_dir(), "thumb_cache")

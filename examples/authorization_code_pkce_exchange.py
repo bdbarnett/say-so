@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import AuthorizationCodeAuth, credentials_from_config, load_config, redirect_uri_from_config
+from sayso import AuthorizationCodeAuth, credentials_from_config, load_config, redirect_uri_from_config
 
 
 def main():
@@ -12,9 +12,9 @@ def main():
     expected_state = config.get("auth_state")
 
     if not callback_url:
-        raise SystemExit("Set callback_url in spotapi.local.json to the full URL Spotify redirected to")
+        raise SystemExit("Set callback_url in sayso.local.json to the full URL Spotify redirected to")
     if not code_verifier:
-        raise SystemExit("Set code_verifier in spotapi.local.json from authorization_code_pkce_url.py")
+        raise SystemExit("Set code_verifier in sayso.local.json from authorization_code_pkce_url.py")
 
     client_id, client_secret = credentials_from_config(config)
     auth = AuthorizationCodeAuth(

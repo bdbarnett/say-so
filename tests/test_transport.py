@@ -1,6 +1,6 @@
 import unittest
 
-from spotapi.transport import TransportError, http_request, response_bytes, response_json
+from sayso.transport import TransportError, http_request, response_bytes, response_json
 
 
 class _MicroPythonLikeResponse:
@@ -83,7 +83,7 @@ class TransportHttpRequestTest(unittest.TestCase):
             captured["headers"] = headers
             return _MicroPythonLikeResponse(204, b"")
 
-        import spotapi.transport as transport_module
+        import sayso.transport as transport_module
 
         original_post = transport_module.requests.post
         transport_module.requests.post = fake_post

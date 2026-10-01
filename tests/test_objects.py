@@ -1,7 +1,7 @@
 import unittest
 
-from spotapi import AlbumPage, Artist, HydrationError, Page, Playlist, PlaylistTrackPage, Track, User, set_client
-from spotapi.transport import TransportError
+from sayso import AlbumPage, Artist, HydrationError, Page, Playlist, PlaylistTrackPage, Track, User, set_client
+from sayso.transport import TransportError
 
 
 class _FakeClient:

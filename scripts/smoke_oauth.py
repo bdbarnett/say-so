@@ -6,7 +6,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from spotapi import SpotifyClient, load_config, token_cache_from_config
+from sayso import SpotifyClient, load_config, token_cache_from_config
 
 
 def main():

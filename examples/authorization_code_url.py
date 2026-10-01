@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import AuthorizationCodeAuth, credentials_from_config, load_config, redirect_uri_from_config, scopes_from_config
+from sayso import AuthorizationCodeAuth, credentials_from_config, load_config, redirect_uri_from_config, scopes_from_config
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
         scope=scopes_from_config(config),
     )
 
-    print(auth.authorize_url(state="spotapi-example", show_dialog=True))
+    print(auth.authorize_url(state="sayso-example", show_dialog=True))
 
 
 if __name__ == "__main__":

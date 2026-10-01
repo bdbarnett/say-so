@@ -2,7 +2,7 @@
 
 ## Cursor Cloud specific instructions
 
-`spotapi` is a single, pure-Python (stdlib-only) Spotify Web API **client library**
+`sayso` is a single, pure-Python (stdlib-only) Spotify Web API **client library**
 targeting CPython/MicroPython/CircuitPython. There are no servers, databases, or
 background services to run — it is a library plus `tests/`, `examples/`, `scripts/`,
 and `apps/` (for example `apps/spotify_remote/`).
@@ -20,9 +20,9 @@ Common commands (run from repo root):
 
 Non-obvious notes:
 - `tests/test_objects.py` and `tests/test_transport.py` run offline with no credentials or network.
-  `tests/test_live.py` is skipped without `spotapi.local.json`.
-- `scripts/spotapi_*_discovery.py` exercise the object graph live (OAuth user
-  token). `spotapi_playlist_discovery.py` requires an owned playlist.
+  `tests/test_live.py` is skipped without `sayso.local.json`.
+- `scripts/sayso_*_discovery.py` exercise the object graph live (OAuth user
+  token). `sayso_playlist_discovery.py` requires an owned playlist.
 - `examples/*.py` and `scripts/smoke_client_credentials.py` need real Spotify
   credentials (`SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET`, and a refresh token /
   callback URL for user-scoped flows) and live network. They are NOT needed to
@@ -33,7 +33,7 @@ Non-obvious notes:
   Spotify's OpenAPI schema from the network by default (pass a local schema path to
   run offline); `generate_object_specs.py` only needs `PyYAML` (the `schema` extra)
   for YAML schemas.
-- To exercise the client without network, replace `spotapi.transport.requests`
+- To exercise the client without network, replace `sayso.transport.requests`
   with a mock object exposing `get`/`post` (and `put`/`delete` for write paths)
   before constructing `SpotifyClient`.
 - MicroPython on Linux is validated; embedded MicroPython and CircuitPython on
