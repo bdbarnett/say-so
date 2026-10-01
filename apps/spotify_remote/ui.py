@@ -625,6 +625,7 @@ class SpotifyUI:
         title_w = max(120, details_width - action_space)
         self.track_label = lv.label(self.now_panel)
         self.track_label.set_width(title_w)
+        self.track_label.set_height(CHIP_H)
         self.track_label.set_long_mode(LABEL_LONG_DOT)
         self.track_label.set_style_text_color(_hex(TEXT), 0)
         self.track_label.set_text("-")
@@ -1982,7 +1983,9 @@ class SpotifyUI:
         else:
             shown = row_actions or []
             overflow = []
-        row_h = ROW_HEIGHT
+        # Long recent-played titles are allowed two lines, but never grow into
+        # the action chips or the next row.
+        row_h = 56 if getattr(self, "_compact_height", False) else ROW_HEIGHT
 
         row = lv.obj(scroll)
         if hidden:
@@ -2014,11 +2017,12 @@ class SpotifyUI:
             label_text = "> " + label_text
         if on_primary is not None:
             main_btn = lv.button(row)
-            main_btn.set_size(max(80, main_w), ROW_HEIGHT)
+            main_btn.set_size(max(80, main_w), row_h)
             main_btn.align(lv.ALIGN.LEFT_MID, 0, 0)
             _style_link_button(main_btn, None)
             text = lv.label(main_btn)
             text.set_width(max(60, main_w - 16))
+            text.set_height(row_h - 8)
             text.set_long_mode(LABEL_LONG_DOT)
             text.set_text(label_text)
             text.align(lv.ALIGN.LEFT_MID, left_pad - 8, 0)
@@ -2032,6 +2036,7 @@ class SpotifyUI:
         else:
             text = lv.label(row)
             text.set_width(max(60, main_w - 8))
+            text.set_height(row_h - 8)
             text.set_long_mode(LABEL_LONG_DOT)
             text.set_text(label_text)
             text.align(lv.ALIGN.LEFT_MID, left_pad, 0)
@@ -2040,7 +2045,7 @@ class SpotifyUI:
 
         if chips:
             x = self._list_w - 8 - action_w
-            y_chip = (ROW_HEIGHT - CHIP_H) // 2
+            y_chip = (row_h - CHIP_H) // 2
             for action in shown:
                 btn, label = self._row_action_chip(
                     row,
