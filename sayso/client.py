@@ -67,7 +67,7 @@ class SpotifyClient:
         config_path=None,
         scope=None,
         authenticate_if_needed=True,
-        auth_state="spotapi",
+        auth_state="sayso",
     ):
         self.access_token = access_token
         self.auth = auth

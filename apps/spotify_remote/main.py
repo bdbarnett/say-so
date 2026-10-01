@@ -9,7 +9,7 @@ def _parent(path):
     return path.rsplit("/", 1)[0] if "/" in path else "."
 
 
-# Run from anywhere: the spotify_remote package lives in apps/, and the spotapi
+# Run from anywhere: the spotify_remote package lives in apps/, and the sayso
 # package at the repo root, two levels above this file.
 # Only from a source tree: frozen into firmware, or installed on a board, the
 # packages are already importable, and the entries this would add ("/", "//.")

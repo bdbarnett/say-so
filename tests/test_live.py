@@ -1,6 +1,6 @@
 import unittest
 
-from spotapi import config_available
+from sayso import config_available
 
 
 def _owned_playlist(client, me):
@@ -12,11 +12,11 @@ def _owned_playlist(client, me):
 
 @unittest.skipUnless(
     config_available(),
-    "Copy spotapi.local.json.example to spotapi.local.json and add credentials",
+    "Copy sayso.local.json.example to sayso.local.json and add credentials",
 )
 class SpotifyLiveTest(unittest.TestCase):
     def test_spotify_client_me(self):
-        from spotapi import SpotifyClient
+        from sayso import SpotifyClient
 
         client = SpotifyClient()
         user = client.me()
@@ -25,7 +25,7 @@ class SpotifyLiveTest(unittest.TestCase):
         self.assertIsNotNone(user.display_name)
 
     def test_spotify_client_track_with_client_credentials(self):
-        from spotapi import SpotifyClient, credentials_from_config, load_config
+        from sayso import SpotifyClient, credentials_from_config, load_config
 
         config = load_config()
         client_id, client_secret = credentials_from_config(config)
@@ -38,7 +38,7 @@ class SpotifyLiveTest(unittest.TestCase):
         self.assertIsNotNone(track.artists[0].name)
 
     def test_owned_playlist_items(self):
-        from spotapi import SpotifyClient
+        from sayso import SpotifyClient
 
         client = SpotifyClient()
         me = client.me()
@@ -49,7 +49,7 @@ class SpotifyLiveTest(unittest.TestCase):
         self.assertIsNotNone(playlist.items[0].item.name)
 
     def test_artist_albums_from_track(self):
-        from spotapi import SpotifyClient
+        from sayso import SpotifyClient
 
         client = SpotifyClient()
         saved_tracks = client.saved_tracks(limit=1)
@@ -65,7 +65,7 @@ class SpotifyLiveTest(unittest.TestCase):
         self.assertIsNotNone(albums_page[0].name)
 
     def test_saved_tracks_page(self):
-        from spotapi import SpotifyClient
+        from sayso import SpotifyClient
 
         client = SpotifyClient()
         page = client.saved_tracks(limit=2)
@@ -80,7 +80,7 @@ class SpotifyLiveTest(unittest.TestCase):
             self.assertIsNotNone(next_page[0].track.name)
 
     def test_recently_played_cursor(self):
-        from spotapi import SpotifyClient
+        from sayso import SpotifyClient
 
         client = SpotifyClient()
         page = client.recently_played(limit=1)

@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "spotapi"
+name = "sayso"
 version = "0.1.0"
 description = "Lightweight Spotify Web API client experiments for CPython, MicroPython, and CircuitPython"
 readme = "README.md"
@@ -24,7 +24,7 @@ classifiers = [
 schema = ["PyYAML"]
 
 [tool.setuptools]
-packages = ["spotapi"]
+packages = ["sayso"]
 
 [tool.setuptools.exclude-package-data]
-spotapi = ["generated_object_specs.py"]
+sayso = ["generated_object_specs.py"]

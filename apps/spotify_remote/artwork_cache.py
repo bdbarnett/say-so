@@ -1,6 +1,6 @@
 import os
 
-from spotapi.transport import get_bytes
+from sayso.transport import get_bytes
 
 # In-memory caches publish "mem:<hash>" in place of a file path; image_view
 # resolves those here. Shared across caches: the hash is of the URL.

@@ -9,7 +9,7 @@ except ImportError:
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_CLIENT_PATH = os.path.join(ROOT, "spotapi", "client.py")
+DEFAULT_CLIENT_PATH = os.path.join(ROOT, "sayso", "client.py")
 
 REQUEST_HELPERS = {
     "_get_json": "GET",
@@ -36,7 +36,7 @@ TOP_TYPE_PATHS = {
 def main():
     parser = argparse.ArgumentParser(description="Compare SpotifyClient endpoint coverage to the OpenAPI schema.")
     parser.add_argument("--schema", default=DEFAULT_SCHEMA_URL, help="OpenAPI schema URL or local file path")
-    parser.add_argument("--client", default=DEFAULT_CLIENT_PATH, help="Path to spotapi/client.py")
+    parser.add_argument("--client", default=DEFAULT_CLIENT_PATH, help="Path to sayso/client.py")
     parser.add_argument("--map", action="store_true", help="Print the OpenAPI path to SpotifyClient method map")
     args = parser.parse_args()
 

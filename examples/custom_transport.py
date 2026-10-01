@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import SpotifyClient, credentials_from_config, load_config
+from sayso import SpotifyClient, credentials_from_config, load_config
 
 
 def main():

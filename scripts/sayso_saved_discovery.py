@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 
-from spotapi import SpotifyClient
+from sayso import SpotifyClient
 
 client = SpotifyClient()
 me = client.me()

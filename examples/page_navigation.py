@@ -2,7 +2,7 @@ from _bootstrap import bootstrap
 
 bootstrap()
 
-from spotapi import SpotifyClient
+from sayso import SpotifyClient
 
 
 ALBUM_ID = "4aawyAB9vmqN3uQ7FjRGTy"

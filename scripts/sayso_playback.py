@@ -5,7 +5,7 @@ import tty
 
 sys.path.insert(0, os.getcwd())
 
-from spotapi import SpotifyClient
+from sayso import SpotifyClient
 
 
 DEFAULT_TRACK_URI = "spotify:track:11dFghVXANMlKmJXsNCbNl"

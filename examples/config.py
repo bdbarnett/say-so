@@ -1,6 +1,6 @@
 import os
 
-from spotapi import SpotifyConfigError, config_value
+from sayso import SpotifyConfigError, config_value
 
 
 EXAMPLES_DIR = os.path.dirname(os.path.abspath(__file__))

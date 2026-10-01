@@ -367,7 +367,7 @@ def basic_token(client_id, client_secret):
         return binascii.b2a_base64(raw).strip().decode("ascii")
 
 
-DEFAULT_CONFIG_PATH = "spotapi.local.json"
+DEFAULT_CONFIG_PATH = "sayso.local.json"
 DEFAULT_TOKEN_CACHE_PATH = "tokens.json"
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8080"
 
@@ -431,14 +431,14 @@ def load_config(path=None):
     try:
         import json
     except ImportError:
-        raise SpotifyConfigError("json is required to load spotapi.local.json")
+        raise SpotifyConfigError("json is required to load sayso.local.json")
 
     try:
         with open(config_path) as file:
             data = json.load(file)
     except OSError as error:
         raise SpotifyConfigError(
-            "Create {} from spotapi.local.json.example and add your Spotify app credentials".format(
+            "Create {} from sayso.local.json.example and add your Spotify app credentials".format(
                 config_path
             )
         ) from error
@@ -481,7 +481,7 @@ def credentials_from_config(config):
 
     if not client_id or not client_secret:
         raise SpotifyConfigError(
-            "spotapi.local.json must include client_id and client_secret"
+            "sayso.local.json must include client_id and client_secret"
         )
 
     return client_id, client_secret
@@ -531,7 +531,7 @@ def auth_from_config(
     config_path=None,
     scope=None,
     authenticate_if_needed=True,
-    auth_state="spotapi",
+    auth_state="sayso",
 ):
     config = load_config(config_path)
     client_id, client_secret = credentials_from_config(config)
@@ -581,7 +581,7 @@ def auth_from_config(
 def authorize_with_local_server(
     auth,
     redirect_uri,
-    state="spotapi",
+    state="sayso",
     message="Spotify authorization received. You can close this window.",
     open_browser=True,
 ):
@@ -684,7 +684,7 @@ def wait_for_oauth_callback(host, port, message, redirect_uri):
         raise SpotifyAuthError(
             "No OAuth callback was received at {}. "
             "If the browser could not reach localhost, copy the full redirect URL "
-            "into spotapi.local.json as callback_url and run "
+            "into sayso.local.json as callback_url and run "
             "examples/authorization_code_pkce_exchange.py.".format(redirect_uri)
         )
 
@@ -737,7 +737,7 @@ def wait_for_oauth_callback_socket(host, port, message, redirect_uri):
         raise SpotifyAuthError(
             "No OAuth callback was received at {}. "
             "If the browser could not reach localhost, copy the full redirect URL "
-            "into spotapi.local.json as callback_url and run "
+            "into sayso.local.json as callback_url and run "
             "examples/authorization_code_pkce_exchange.py.".format(redirect_uri)
         )
 
