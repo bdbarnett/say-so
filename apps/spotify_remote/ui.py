@@ -662,6 +662,7 @@ class SpotifyUI:
         self.artist_btn.add_event_cb(self._on_artist_name_click, lv.EVENT.CLICKED, None)
         self.artist_label = lv.label(self.artist_btn)
         self.artist_label.set_width(artist_title_w - 8)
+        self.artist_label.set_height(CHIP_H)
         self.artist_label.set_long_mode(LABEL_LONG_DOT)
         self.artist_label.set_text("")
         self.artist_label.align(lv.ALIGN.LEFT_MID, 4, 0)
@@ -694,6 +695,7 @@ class SpotifyUI:
         self.album_btn.add_event_cb(self._on_album_name_click, lv.EVENT.CLICKED, None)
         self.album_label = lv.label(self.album_btn)
         self.album_label.set_width(album_title_w - 8)
+        self.album_label.set_height(CHIP_H)
         self.album_label.set_long_mode(LABEL_LONG_DOT)
         self.album_label.set_text("")
         self.album_label.align(lv.ALIGN.LEFT_MID, 4, 0)
@@ -1085,7 +1087,7 @@ class SpotifyUI:
 
         self.mini_track_label = lv.label(bar)
         self.mini_track_label.set_width(text_width)
-        self.mini_track_label.set_height(34)
+        self.mini_track_label.set_height(18)
         self.mini_track_label.set_long_mode(LABEL_LONG_DOT)
         self.mini_track_label.set_style_text_color(_hex(TEXT), 0)
         self.mini_track_label.set_text("Nothing playing")
@@ -1093,10 +1095,11 @@ class SpotifyUI:
 
         self.mini_artist_label = lv.label(bar)
         self.mini_artist_label.set_width(text_width)
+        self.mini_artist_label.set_height(18)
         self.mini_artist_label.set_long_mode(LABEL_LONG_DOT)
         self.mini_artist_label.set_style_text_color(_hex(MUTED), 0)
         self.mini_artist_label.set_text("")
-        self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 40)
+        self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 27)
 
         timestamp_width = 40
         self.mini_elapsed_label = lv.label(bar)
@@ -1204,10 +1207,16 @@ class SpotifyUI:
 
         title = lv.label(panel)
         title.set_width(content_width - PANEL_TITLE_X - 16)
+        title.set_height(28)
         title.set_long_mode(LABEL_LONG_DOT)
         title.set_style_text_color(_hex(TEXT), 0)
+        try:
+            title.set_style_text_font(lv.font_montserrat_16, 0)
+        except AttributeError:
+            pass
         title.set_text("")
-        title.align(lv.ALIGN.TOP_LEFT, PANEL_TITLE_X, 14)
+        title.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
+        title.align(lv.ALIGN.TOP_MID, 0, 10)
 
         hub = lv.obj(panel)
         hub.set_size(content_width - 16, HUB_ROW_H)
