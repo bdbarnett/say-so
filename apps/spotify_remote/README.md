@@ -5,9 +5,11 @@ LVGL touch UI for Spotify playback control, built on [sayso](../../) and
 
 Target display: LCD-7, 800x480 capacitive touch. At that size the UI uses a
 Spotify-style left navigation rail, a Now Playing screen, and a persistent
-bottom mini-player. Larger displays retain the roomier tab layout. Hardware-
-specific display and input drivers are intentionally deferred; it runs on
-desktop CPython and MicroPython (Linux and Windows) under the PyDevices stack.
+bottom mini-player. The mini-player keeps Queue and Connect to Device beside
+mute and an inline volume slider; elapsed and total times flank its progress
+bar. Larger displays retain the roomier tab layout. Hardware-specific display
+and input drivers are intentionally deferred; it runs on desktop CPython and
+MicroPython (Linux and Windows) under the PyDevices stack.
 
 ## Files
 

@@ -845,7 +845,14 @@ class SpotifyUI:
             # On the LCD-7 the detailed transport controls live in a Spotify-
             # style persistent mini-player. The Now panel keeps its artwork
             # and metadata readable instead of stacking controls into it.
-            for widget in (btn_row, aux_row, self.progress, self.time_label):
+            for widget in (
+                btn_row,
+                aux_row,
+                self.progress,
+                self.time_label,
+                self.volume_btn,
+                self.volume_popup,
+            ):
                 widget.add_flag(lv.obj.FLAG.HIDDEN)
             self._build_mini_player(parent, content_x, height - footer_h, width - content_x, footer_h)
 
@@ -1051,10 +1058,16 @@ class SpotifyUI:
         self.mini_art = image_view.CoverArtView(bar, art_size, MINI_BAR, MUTED)
         self.mini_art.align(lv.ALIGN.LEFT_MID, 8, 0)
 
-        control_size = 34
-        play_size = 44
+        control_size = 30
+        play_size = 40
         gap = 4
-        control_width = control_size * 4 + play_size + gap * 4
+        transport_width = control_size * 4 + play_size + gap * 4
+        queue_width = 38
+        device_width = 88
+        mute_width = 34
+        volume_width = 78
+        extras_width = queue_width + device_width + mute_width + volume_width + gap * 3
+        control_width = transport_width + extras_width + gap
         controls_x = width - control_width - 8
         text_x = art_size + 18
         text_width = max(120, controls_x - text_x - 10)
@@ -1073,9 +1086,22 @@ class SpotifyUI:
         self.mini_artist_label.set_text("")
         self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 28)
 
+        timestamp_width = 40
+        self.mini_elapsed_label = lv.label(bar)
+        self.mini_elapsed_label.set_width(timestamp_width)
+        self.mini_elapsed_label.set_style_text_color(_hex(MUTED), 0)
+        self.mini_elapsed_label.set_text("0:00")
+        self.mini_elapsed_label.align(lv.ALIGN.BOTTOM_LEFT, text_x, -8)
+
+        self.mini_duration_label = lv.label(bar)
+        self.mini_duration_label.set_width(timestamp_width)
+        self.mini_duration_label.set_style_text_color(_hex(MUTED), 0)
+        self.mini_duration_label.set_text("0:00")
+        self.mini_duration_label.align(lv.ALIGN.BOTTOM_RIGHT, -(width - text_x - text_width), -8)
+
         self.mini_progress = lv.slider(bar)
-        self.mini_progress.set_size(text_width, 4)
-        self.mini_progress.align(lv.ALIGN.BOTTOM_LEFT, text_x, -9)
+        self.mini_progress.set_size(max(24, text_width - timestamp_width * 2 - 8), 4)
+        self.mini_progress.align(lv.ALIGN.BOTTOM_LEFT, text_x + timestamp_width + 4, -10)
         self.mini_progress.set_range(0, 1000)
         self.mini_progress.set_value(0, ANIM_OFF)
         _style_slim_slider(self.mini_progress)
@@ -1108,12 +1134,53 @@ class SpotifyUI:
         tx += control_size + gap
         self.mini_next_btn = self._transport_button(bar, lv.SYMBOL.NEXT, tx, 0, control_size)
         self.mini_next_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
+
+        self.mini_queue_btn, self.mini_queue_label = self._row_button(
+            bar, getattr(lv.SYMBOL, "LIST", "Queue"), tx, queue_width, control_size
+        )
+        self.mini_queue_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += queue_width + gap
+
+        self.mini_device_btn = lv.button(bar)
+        self.mini_device_btn.set_size(device_width, control_size)
+        self.mini_device_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        self.mini_device_label = lv.label(self.mini_device_btn)
+        self.mini_device_label.set_width(device_width - 8)
+        self.mini_device_label.set_long_mode(LABEL_LONG_DOT)
+        self.mini_device_label.set_text("Connect to Device")
+        self.mini_device_label.center()
+        _style_chip(self.mini_device_btn, self.mini_device_label, active=False, fresh=True)
+        tx += device_width + gap
+
+        self.mini_mute_btn = lv.button(bar)
+        self.mini_mute_btn.set_size(mute_width, control_size)
+        self.mini_mute_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        self.mini_mute_label = lv.label(self.mini_mute_btn)
+        self.mini_mute_label.set_text(_volume_btn_symbol())
+        self.mini_mute_label.center()
+        _style_chip(self.mini_mute_btn, self.mini_mute_label, active=False, fresh=True)
+        tx += mute_width + gap
+
+        self.mini_volume_slider = lv.slider(bar)
+        self.mini_volume_slider.set_size(volume_width, 4)
+        self.mini_volume_slider.align(lv.ALIGN.TOP_LEFT, tx, (height - 4) // 2)
+        self.mini_volume_slider.set_range(0, len(VOLUME_LEVELS) - 1)
+        self.mini_volume_slider.set_value(_volume_index(self._last_volume), ANIM_OFF)
+        _style_slim_slider(self.mini_volume_slider)
+        self.mini_volume_slider.add_event_cb(self._on_mini_volume_slider, lv.EVENT.RELEASED, None)
+        self.mini_volume_slider.add_event_cb(self._on_mini_volume_activity, lv.EVENT.PRESSED, None)
+        self.mini_volume_slider.add_event_cb(self._on_mini_volume_activity, lv.EVENT.PRESSING, None)
+        self.mini_volume_slider.add_event_cb(self._on_mini_volume_activity, lv.EVENT.RELEASED, None)
 
         self.mini_prev_btn.add_event_cb(self._on_prev, lv.EVENT.CLICKED, None)
         self.mini_shuffle_btn.add_event_cb(self._on_shuffle, lv.EVENT.CLICKED, None)
         self.mini_play_btn.add_event_cb(self._on_play_pause, lv.EVENT.CLICKED, None)
         self.mini_repeat_btn.add_event_cb(self._on_repeat, lv.EVENT.CLICKED, None)
         self.mini_next_btn.add_event_cb(self._on_next, lv.EVENT.CLICKED, None)
+        self.mini_queue_btn.add_event_cb(self._show_queue, lv.EVENT.CLICKED, None)
+        self.mini_device_btn.add_event_cb(self._show_devices, lv.EVENT.CLICKED, None)
+        self.mini_mute_btn.add_event_cb(self._on_mini_mute, lv.EVENT.CLICKED, None)
 
     def _build_list_panel(self, parent, content_width, content_height, panel_y, with_hub=False):
         panel = lv.obj(parent)
@@ -2608,6 +2675,7 @@ class SpotifyUI:
         else:
             self.progress.set_value(0, ANIM_OFF)
         self.time_label.set_text("{} / {}".format(_fmt_ms(progress), _fmt_ms(duration)))
+        self._set_mini_time_labels(progress, duration)
         if hasattr(self, "mini_progress"):
             self.mini_progress.set_value(
                 int(min(progress, duration) * 1000 / duration) if duration else 0,
@@ -2958,6 +3026,12 @@ class SpotifyUI:
         self.time_label.set_text(
             "{} / {}".format(_fmt_ms(position), _fmt_ms(duration))
         )
+        self._set_mini_time_labels(position, duration)
+
+    def _set_mini_time_labels(self, progress, duration):
+        if hasattr(self, "mini_elapsed_label"):
+            self.mini_elapsed_label.set_text(_fmt_ms(progress))
+            self.mini_duration_label.set_text(_fmt_ms(duration))
 
     def _on_progress_slider(self, event):
         code = event.get_code()
@@ -3002,6 +3076,35 @@ class SpotifyUI:
         if event.get_code() not in (lv.EVENT.PRESSED, lv.EVENT.PRESSING, lv.EVENT.RELEASED):
             return
         self._reset_volume_hide_timer()
+
+    def _on_mini_volume_slider(self, event):
+        if event.get_code() != lv.EVENT.RELEASED or self._volume_slider_busy:
+            return
+        value = int(VOLUME_LEVELS[self.mini_volume_slider.get_value()])
+        self._last_volume = value
+        self._volume_slider_busy = True
+        try:
+            self._run_transport(
+                lambda: self.controller.change_volume_absolute(value), key="volume"
+            )
+        finally:
+            self._volume_slider_busy = False
+
+    def _on_mini_volume_activity(self, event):
+        if event.get_code() in (lv.EVENT.PRESSED, lv.EVENT.PRESSING, lv.EVENT.RELEASED):
+            self._last_volume = int(VOLUME_LEVELS[self.mini_volume_slider.get_value()])
+
+    def _on_mini_mute(self, _event):
+        current = int(self._last_volume)
+        target = 0 if current > 0 else 50
+        if current > 0:
+            self._volume_before_mute = current
+        elif getattr(self, "_volume_before_mute", 0):
+            target = self._volume_before_mute
+        self._last_volume = target
+        self._run_transport(
+            lambda: self.controller.change_volume_absolute(target), key="volume"
+        )
 
     def _on_volume_btn(self, _event):
         self._toggle_volume_popup()
@@ -3250,6 +3353,8 @@ class SpotifyUI:
 
     def set_device(self, name):
         self.device_btn_label.set_text(name or "Device")
+        if hasattr(self, "mini_device_label"):
+            self.mini_device_label.set_text(name or "Connect to Device")
 
     def set_status(self, text, kind="info"):
         if self._status_timer is not None:
@@ -3428,6 +3533,7 @@ class SpotifyUI:
                 int(progress * 1000 / duration) if duration else 0,
                 ANIM_OFF,
             )
+            self._set_mini_time_labels(progress, duration)
 
         self._style_play(bool(state["playing"]))
 
@@ -3460,6 +3566,13 @@ class SpotifyUI:
             self._styled["volume"] = int(volume)
             self._last_volume = int(volume)
             self.volume_slider.set_value(_volume_index(self._last_volume), ANIM_OFF)
+            if hasattr(self, "mini_volume_slider"):
+                self.mini_volume_slider.set_value(_volume_index(self._last_volume), ANIM_OFF)
+                self.mini_mute_label.set_text(
+                    getattr(lv.SYMBOL, "MUTE", "Mute")
+                    if self._last_volume == 0
+                    else _volume_btn_symbol()
+                )
 
     def _playback_flags(self, state):
         parts = []

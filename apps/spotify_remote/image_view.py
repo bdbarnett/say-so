@@ -143,6 +143,18 @@ def set_thumbnail(image, path):
         return None
     image.set_src(descriptor)
     image.set_inner_align(lv.image.ALIGN.CONTAIN)
+    # LVGL's CONTAIN alignment centers an image but does not resize it. Set a
+    # native scale so album art fits the row thumbnail instead of being cropped.
+    try:
+        source_w = int(descriptor.header.w)
+        source_h = int(descriptor.header.h)
+        target_w = int(image.get_width())
+        target_h = int(image.get_height())
+        if source_w > 0 and source_h > 0 and target_w > 0 and target_h > 0:
+            scale = min(target_w * 256 // source_w, target_h * 256 // source_h)
+            image.set_scale(max(1, min(256, scale)))
+    except (AttributeError, TypeError, ValueError):
+        pass
     return descriptor, data
 
 
