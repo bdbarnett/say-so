@@ -1,6 +1,5 @@
-import time
-
 import lvgl as lv
+from multimer import ticks_add, ticks_diff, ticks_ms
 
 try:
     LABEL_LONG_DOT = lv.label.LONG.DOT
@@ -2676,13 +2675,13 @@ class SpotifyUI:
         self._style_play(playing)
         if self._progress_base is not None:
             # Restart interpolation from where the bar is now.
-            self._progress_base = (self._shown_progress(), time.ticks_ms())
+            self._progress_base = (self._shown_progress(), ticks_ms())
 
     def _render_progress(self, progress, duration):
         if self._seek_dragging:
             return
         if self._seek_hold_until:
-            if time.ticks_diff(self._seek_hold_until, time.ticks_ms()) >= 0:
+            if ticks_diff(self._seek_hold_until, ticks_ms()) >= 0:
                 return
             self._seek_hold_until = 0
         if duration > 0:
@@ -2703,7 +2702,7 @@ class SpotifyUI:
             return self._now_state.get("progress_ms") or 0
         progress, at = base
         if self._now_state.get("playing"):
-            progress += time.ticks_diff(time.ticks_ms(), at)
+            progress += ticks_diff(ticks_ms(), at)
         duration = self._now_state.get("duration_ms") or 0
         return min(progress, duration) if duration else progress
 
@@ -3062,10 +3061,10 @@ class SpotifyUI:
             self._seek_to(position_ms)
 
     def _seek_to(self, position_ms):
-        self._progress_base = (position_ms, time.ticks_ms())
+        self._progress_base = (position_ms, ticks_ms())
         self._render_progress(position_ms, self._now_state.get("duration_ms") or 0)
         # Hold the slider where it was dropped until a refresh catches up.
-        self._seek_hold_until = time.ticks_add(time.ticks_ms(), 3500)
+        self._seek_hold_until = ticks_add(ticks_ms(), 3500)
         self._net(
             lambda: self.controller.seek_absolute(position_ms),
             retry=lambda: self._seek_to(position_ms),
@@ -3493,7 +3492,7 @@ class SpotifyUI:
 
     def update_now_playing(self, state):
         self._now_state = state
-        self._progress_base = (state.get("progress_ms") or 0, time.ticks_ms())
+        self._progress_base = (state.get("progress_ms") or 0, ticks_ms())
         if state.get("item_id") != getattr(self, "_last_item_id", None):
             self._selected_artist = None
             self._last_item_id = state.get("item_id")
@@ -3514,7 +3513,7 @@ class SpotifyUI:
         duration = state["duration_ms"] or 0
         progress = state["progress_ms"] or 0
         if not self._seek_dragging and self._seek_hold_until:
-            if time.ticks_diff(self._seek_hold_until, time.ticks_ms()) >= 0:
+            if ticks_diff(self._seek_hold_until, ticks_ms()) >= 0:
                 pass
             else:
                 self._seek_hold_until = 0
@@ -3540,8 +3539,8 @@ class SpotifyUI:
                 "{} / {}".format(_fmt_ms(progress), _fmt_ms(duration))
             )
 
-        mini_seek_held = self._seek_hold_until and time.ticks_diff(
-            self._seek_hold_until, time.ticks_ms()
+        mini_seek_held = self._seek_hold_until and ticks_diff(
+            self._seek_hold_until, ticks_ms()
         ) >= 0
         if hasattr(self, "mini_progress") and not self._seek_dragging and not mini_seek_held:
             self.mini_progress.set_value(

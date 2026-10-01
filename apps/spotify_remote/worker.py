@@ -10,9 +10,8 @@ Without a usable thread (the Windows and unix ports) the work runs on the next
 LVGL tick instead, as before: the UI still works, it just blocks while it waits.
 """
 
-import time
-
 import lvgl as lv
+from multimer import ticks_diff, ticks_ms
 
 from spotify_remote import gil
 
@@ -118,12 +117,12 @@ class Worker:
             self._release()
         value = None
         error = None
-        started = time.ticks_ms()
+        started = ticks_ms()
         try:
             value = work()
         except Exception as exc:  # noqa: BLE001 - reported to the UI
             error = exc
-        self.recent.append((key or getattr(work, "__name__", "?"), time.ticks_diff(time.ticks_ms(), started)))
+        self.recent.append((key or getattr(work, "__name__", "?"), ticks_diff(ticks_ms(), started)))
         if len(self.recent) > 12:
             self.recent.pop(0)
         self._acquire()
@@ -160,11 +159,11 @@ class Worker:
                 done, value, error = self._done.pop(0)
             finally:
                 self._release()
-            started = time.ticks_ms()
+            started = ticks_ms()
             try:
                 done(value, error)
             except Exception as exc:  # noqa: BLE001 - keep the timer alive
                 print("worker: done callback raised", repr(exc))
-            spent = time.ticks_diff(time.ticks_ms(), started)
+            spent = ticks_diff(ticks_ms(), started)
             if spent >= 20:
                 self.recent.append(("ui", spent))

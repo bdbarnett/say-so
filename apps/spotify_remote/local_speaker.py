@@ -15,6 +15,7 @@ over from earful.credentials, because the C side cannot reach the VFS.
 import sys
 
 import lvgl as lv
+from multimer import ticks_add, ticks_diff, ticks_ms
 
 PUMP_MS = 10
 CRED_FILE = "earful.credentials"
@@ -171,8 +172,8 @@ def _usb_output(fmt):
         print("local speaker: no usbif in this firmware for a USB sound card")
         return None
     host = usbif.auto.host(classes=("uac",)).start()
-    deadline = time.ticks_add(time.ticks_ms(), USB_FIND_MS)
-    while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+    deadline = ticks_add(ticks_ms(), USB_FIND_MS)
+    while ticks_diff(deadline, ticks_ms()) > 0:
         for dev_id, streams in uac_audio.audio_devices():
             if any(s.direction == uac.OUT for s in streams):
                 try:
