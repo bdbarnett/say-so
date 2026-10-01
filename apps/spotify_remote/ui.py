@@ -549,11 +549,18 @@ class SpotifyUI:
         self.device_btn_label.set_text("Device")
         self.device_btn_label.center()
 
+        if compact_height:
+            # Search and device selection live in the rail and mini-player on
+            # the LCD-7; keep the objects for shared callbacks but remove the
+            # duplicate header controls.
+            self.search_btn.add_flag(lv.obj.FLAG.HIDDEN)
+            self.device_btn.add_flag(lv.obj.FLAG.HIDDEN)
+
         nav_items = (
             ("now", getattr(lv.SYMBOL, "HOME", "Now")),
+            ("search", getattr(lv.SYMBOL, "SEARCH", getattr(lv.SYMBOL, "IMAGE", "Find"))),
             ("library", getattr(lv.SYMBOL, "LIST", "Library")),
-            ("queue", getattr(lv.SYMBOL, "PLAY", "Queue")),
-            ("recent", getattr(lv.SYMBOL, "LOOP", "Recent")),
+            ("recent", getattr(lv.SYMBOL, "REFRESH", getattr(lv.SYMBOL, "LOOP", "Recent"))),
         ) if compact_height else (
             ("now", "Now"),
             ("library", "Library"),
@@ -594,6 +601,8 @@ class SpotifyUI:
             self._nav_tabs[tab_id] = (btn, label)
             if tab_id == "now":
                 btn.add_event_cb(self._show_now, lv.EVENT.CLICKED, None)
+            elif tab_id == "search":
+                btn.add_event_cb(self._show_search, lv.EVENT.CLICKED, None)
             elif tab_id == "library":
                 btn.add_event_cb(self._show_library_hub, lv.EVENT.CLICKED, None)
             elif tab_id == "queue":
@@ -1110,13 +1119,15 @@ class SpotifyUI:
         self.mini_progress.add_event_cb(self._on_progress_slider, lv.EVENT.RELEASED, None)
 
         tx = controls_x
-        self.mini_prev_btn = self._transport_button(bar, lv.SYMBOL.PREV, tx, 0, control_size)
-        self.mini_prev_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
-        tx += control_size + gap
+        # Shuffle and repeat sit outside the three-button transport cluster:
+        # shuffle, previous, play/pause, next, repeat.
         self.mini_shuffle_btn, self.mini_shuffle_label = self._row_button(
             bar, lv.SYMBOL.SHUFFLE, tx, control_size, control_size
         )
         self.mini_shuffle_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
+        self.mini_prev_btn = self._transport_button(bar, lv.SYMBOL.PREV, tx, 0, control_size)
+        self.mini_prev_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
         tx += control_size + gap
         self.mini_play_btn = lv.button(bar)
         self.mini_play_btn.set_size(play_size, play_size)
@@ -1127,13 +1138,13 @@ class SpotifyUI:
         self.mini_play_label.set_style_text_color(_hex(TEXT), 0)
         self.mini_play_label.center()
         tx += play_size + gap
+        self.mini_next_btn = self._transport_button(bar, lv.SYMBOL.NEXT, tx, 0, control_size)
+        self.mini_next_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
         self.mini_repeat_btn, self.mini_repeat_label = self._row_button(
             bar, lv.SYMBOL.LOOP, tx, control_size, control_size
         )
         self.mini_repeat_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
-        tx += control_size + gap
-        self.mini_next_btn = self._transport_button(bar, lv.SYMBOL.NEXT, tx, 0, control_size)
-        self.mini_next_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
         tx += control_size + gap
 
         self.mini_queue_btn, self.mini_queue_label = self._row_button(
@@ -1148,7 +1159,7 @@ class SpotifyUI:
         self.mini_device_label = lv.label(self.mini_device_btn)
         self.mini_device_label.set_width(device_width - 8)
         self.mini_device_label.set_long_mode(LABEL_LONG_DOT)
-        self.mini_device_label.set_text("Connect to Device")
+        self.mini_device_label.set_text(getattr(lv.SYMBOL, "DRIVE", lv.SYMBOL.SETTINGS))
         self.mini_device_label.center()
         _style_chip(self.mini_device_btn, self.mini_device_label, active=False, fresh=True)
         tx += device_width + gap
@@ -1227,6 +1238,9 @@ class SpotifyUI:
         back_label = lv.label(back_btn)
         back_label.set_text("Back")
         _style_back_button(back_btn, back_label)
+        # Home is permanently available on the LCD-7 rail, so a second
+        # navigation control only consumes list header space.
+        back_btn.add_flag(lv.obj.FLAG.HIDDEN)
         _raise_back_button(back_btn)
         return panel, title, scroll, hub, back_btn
 
@@ -3354,7 +3368,7 @@ class SpotifyUI:
     def set_device(self, name):
         self.device_btn_label.set_text(name or "Device")
         if hasattr(self, "mini_device_label"):
-            self.mini_device_label.set_text(name or "Connect to Device")
+            self.mini_device_label.set_text(getattr(lv.SYMBOL, "DRIVE", lv.SYMBOL.SETTINGS))
 
     def set_status(self, text, kind="info"):
         if self._status_timer is not None:
