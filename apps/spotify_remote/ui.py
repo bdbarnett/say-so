@@ -39,6 +39,8 @@ ACCENT_PRESSED = 0x169C46
 PAUSE_PRESSED = 0xB81022
 SUCCESS = 0x1ED760
 ERROR = 0xF15E6C
+RAIL = 0x181818
+MINI_BAR = 0x080808
 
 ROW_HEIGHT = 44
 ROW_GAP = 4
@@ -457,10 +459,12 @@ class SpotifyUI:
         width = self.width
         height = self.height
         compact_height = height <= 500
-        header_h = 56
-        footer_h = 48 if compact_height else 56
-        margin = 12 if compact_height else 16
-        content_width = width - margin * 2
+        header_h = 48 if compact_height else 56
+        footer_h = 72 if compact_height else 56
+        margin = 8 if compact_height else 16
+        rail_w = 72 if compact_height else 0
+        content_x = rail_w + margin
+        content_width = width - content_x - margin
         content_height = height - header_h - footer_h - margin * 2
         panel_y = header_h + margin
         label_width = max(180, content_width - 96)
@@ -475,6 +479,9 @@ class SpotifyUI:
             details_x = 24
         self._details_x = details_x
         self._details_width = details_width
+        self._panel_x = content_x
+        self._compact_height = compact_height
+        self._footer_h = footer_h
         progress_width = details_width
         slider_track_h = 16
         transport_max = 48 if compact_height else 56
@@ -543,25 +550,47 @@ class SpotifyUI:
         self.device_btn_label.center()
 
         nav_items = (
+            ("now", getattr(lv.SYMBOL, "HOME", "Now")),
+            ("library", getattr(lv.SYMBOL, "LIST", "Library")),
+            ("queue", getattr(lv.SYMBOL, "PLAY", "Queue")),
+            ("recent", getattr(lv.SYMBOL, "LOOP", "Recent")),
+        ) if compact_height else (
             ("now", "Now"),
             ("library", "Library"),
             ("queue", "Queue"),
             ("recent", "Recent"),
         )
-        nav_gap = 10
-        nav_h = 40
-        nav_w = min(
+        nav_gap = 6 if compact_height else 10
+        nav_h = 48 if compact_height else 40
+        nav_w = rail_w - 16 if compact_height else min(
             160,
             (width - margin * 2 - nav_gap * (len(nav_items) - 1)) // len(nav_items),
         )
         nav_total = nav_w * len(nav_items) + nav_gap * (len(nav_items) - 1)
         nav_x = (width - nav_total) // 2
 
+        nav_parent = parent
+        if compact_height:
+            self.nav_rail = lv.obj(parent)
+            self.nav_rail.set_size(rail_w, height - header_h - footer_h)
+            self.nav_rail.align(lv.ALIGN.TOP_LEFT, 0, header_h)
+            self.nav_rail.set_style_bg_color(_hex(RAIL), 0)
+            self.nav_rail.set_style_border_width(0, 0)
+            self.nav_rail.set_style_pad_all(0, 0)
+            self.nav_rail.remove_flag(lv.obj.FLAG.SCROLLABLE)
+            nav_parent = self.nav_rail
+
         self._nav_tabs = {}
         for index, (tab_id, text) in enumerate(nav_items):
-            btn, label = self._nav_button(
-                parent, text, nav_x + (nav_w + nav_gap) * index, nav_w, nav_h
-            )
+            if compact_height:
+                btn, label = self._nav_button(
+                    nav_parent, text, 8, nav_w, nav_h,
+                    vertical=True, y=8 + (nav_h + nav_gap) * index,
+                )
+            else:
+                btn, label = self._nav_button(
+                    nav_parent, text, nav_x + (nav_w + nav_gap) * index, nav_w, nav_h
+                )
             self._nav_tabs[tab_id] = (btn, label)
             if tab_id == "now":
                 btn.add_event_cb(self._show_now, lv.EVENT.CLICKED, None)
@@ -577,7 +606,7 @@ class SpotifyUI:
 
         self.now_panel = lv.obj(parent)
         self.now_panel.set_size(content_width, content_height)
-        self.now_panel.align(lv.ALIGN.TOP_MID, 0, panel_y)
+        self.now_panel.align(lv.ALIGN.TOP_LEFT, content_x, panel_y)
         self.now_panel.set_style_bg_color(_hex(PANEL), 0)
         self.now_panel.set_style_border_width(0, 0)
         self.now_panel.remove_flag(lv.obj.FLAG.SCROLLABLE)
@@ -812,6 +841,14 @@ class SpotifyUI:
         self.volume_slider.add_event_cb(self._on_volume_slider_activity, lv.EVENT.RELEASED, None)
         self.volume_popup.align_to(self.volume_btn, lv.ALIGN.OUT_TOP_MID, 0, -6)
 
+        if compact_height:
+            # On the LCD-7 the detailed transport controls live in a Spotify-
+            # style persistent mini-player. The Now panel keeps its artwork
+            # and metadata readable instead of stacking controls into it.
+            for widget in (btn_row, aux_row, self.progress, self.time_label):
+                widget.add_flag(lv.obj.FLAG.HIDDEN)
+            self._build_mini_player(parent, content_x, height - footer_h, width - content_x, footer_h)
+
         self._list_w = content_width - 16
         self._hub_y = PANEL_HEADER_H
         self._scroll_y = PANEL_HEADER_H + HUB_ROW_H + 4
@@ -1000,10 +1037,88 @@ class SpotifyUI:
 
         self._show_now(None)
 
+    def _build_mini_player(self, parent, x, y, width, height):
+        bar = lv.obj(parent)
+        bar.set_size(width, height)
+        bar.align(lv.ALIGN.TOP_LEFT, x, y)
+        bar.set_style_bg_color(_hex(MINI_BAR), 0)
+        bar.set_style_border_width(0, 0)
+        bar.set_style_pad_all(0, 0)
+        bar.remove_flag(lv.obj.FLAG.SCROLLABLE)
+        self.mini_bar = bar
+
+        art_size = max(44, height - 16)
+        self.mini_art = image_view.CoverArtView(bar, art_size, MINI_BAR, MUTED)
+        self.mini_art.align(lv.ALIGN.LEFT_MID, 8, 0)
+
+        control_size = 34
+        play_size = 44
+        gap = 4
+        control_width = control_size * 4 + play_size + gap * 4
+        controls_x = width - control_width - 8
+        text_x = art_size + 18
+        text_width = max(120, controls_x - text_x - 10)
+
+        self.mini_track_label = lv.label(bar)
+        self.mini_track_label.set_width(text_width)
+        self.mini_track_label.set_long_mode(LABEL_LONG_DOT)
+        self.mini_track_label.set_style_text_color(_hex(TEXT), 0)
+        self.mini_track_label.set_text("Nothing playing")
+        self.mini_track_label.align(lv.ALIGN.TOP_LEFT, text_x, 9)
+
+        self.mini_artist_label = lv.label(bar)
+        self.mini_artist_label.set_width(text_width)
+        self.mini_artist_label.set_long_mode(LABEL_LONG_DOT)
+        self.mini_artist_label.set_style_text_color(_hex(MUTED), 0)
+        self.mini_artist_label.set_text("")
+        self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 28)
+
+        self.mini_progress = lv.slider(bar)
+        self.mini_progress.set_size(text_width, 4)
+        self.mini_progress.align(lv.ALIGN.BOTTOM_LEFT, text_x, -9)
+        self.mini_progress.set_range(0, 1000)
+        self.mini_progress.set_value(0, ANIM_OFF)
+        _style_slim_slider(self.mini_progress)
+        self.mini_progress.add_event_cb(self._on_progress_slider, lv.EVENT.PRESSED, None)
+        self.mini_progress.add_event_cb(self._on_progress_slider, lv.EVENT.PRESSING, None)
+        self.mini_progress.add_event_cb(self._on_progress_slider, lv.EVENT.RELEASED, None)
+
+        tx = controls_x
+        self.mini_prev_btn = self._transport_button(bar, lv.SYMBOL.PREV, tx, 0, control_size)
+        self.mini_prev_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
+        self.mini_shuffle_btn, self.mini_shuffle_label = self._row_button(
+            bar, lv.SYMBOL.SHUFFLE, tx, control_size, control_size
+        )
+        self.mini_shuffle_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
+        self.mini_play_btn = lv.button(bar)
+        self.mini_play_btn.set_size(play_size, play_size)
+        self.mini_play_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - play_size) // 2)
+        _style_transport_primary(self.mini_play_btn, play_size, playing=False)
+        self.mini_play_label = lv.label(self.mini_play_btn)
+        self.mini_play_label.set_text(lv.SYMBOL.PLAY)
+        self.mini_play_label.set_style_text_color(_hex(TEXT), 0)
+        self.mini_play_label.center()
+        tx += play_size + gap
+        self.mini_repeat_btn, self.mini_repeat_label = self._row_button(
+            bar, lv.SYMBOL.LOOP, tx, control_size, control_size
+        )
+        self.mini_repeat_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+        tx += control_size + gap
+        self.mini_next_btn = self._transport_button(bar, lv.SYMBOL.NEXT, tx, 0, control_size)
+        self.mini_next_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
+
+        self.mini_prev_btn.add_event_cb(self._on_prev, lv.EVENT.CLICKED, None)
+        self.mini_shuffle_btn.add_event_cb(self._on_shuffle, lv.EVENT.CLICKED, None)
+        self.mini_play_btn.add_event_cb(self._on_play_pause, lv.EVENT.CLICKED, None)
+        self.mini_repeat_btn.add_event_cb(self._on_repeat, lv.EVENT.CLICKED, None)
+        self.mini_next_btn.add_event_cb(self._on_next, lv.EVENT.CLICKED, None)
+
     def _build_list_panel(self, parent, content_width, content_height, panel_y, with_hub=False):
         panel = lv.obj(parent)
         panel.set_size(content_width, content_height)
-        panel.align(lv.ALIGN.TOP_MID, 0, panel_y)
+        panel.align(lv.ALIGN.TOP_LEFT, self._panel_x, panel_y)
         panel.set_style_bg_color(_hex(PANEL), 0)
         panel.set_style_border_width(0, 0)
         panel.remove_flag(lv.obj.FLAG.SCROLLABLE)
@@ -1082,10 +1197,13 @@ class SpotifyUI:
         label.center()
         return btn, label
 
-    def _nav_button(self, parent, text, x, width, height):
+    def _nav_button(self, parent, text, x, width, height, vertical=False, y=0):
         btn = lv.button(parent)
         btn.set_size(width, height)
-        btn.align(lv.ALIGN.BOTTOM_LEFT, x, -8)
+        if vertical:
+            btn.align(lv.ALIGN.TOP_LEFT, x, y)
+        else:
+            btn.align(lv.ALIGN.BOTTOM_LEFT, x, -8)
         label = lv.label(btn)
         label.set_text(text)
         label.center()
@@ -2464,6 +2582,10 @@ class SpotifyUI:
             _style_transport_primary(self.play_btn, self.play_btn.get_height(), playing=playing)
             self.play_label.set_text(lv.SYMBOL.PAUSE if playing else lv.SYMBOL.PLAY)
             self.play_label.set_style_text_color(_hex(TEXT), 0)
+            if hasattr(self, "mini_play_btn"):
+                _style_transport_primary(self.mini_play_btn, self.mini_play_btn.get_height(), playing=playing)
+                self.mini_play_label.set_text(lv.SYMBOL.PAUSE if playing else lv.SYMBOL.PLAY)
+                self.mini_play_label.set_style_text_color(_hex(TEXT), 0)
 
         self._restyle("play", playing, apply)
 
@@ -2486,6 +2608,11 @@ class SpotifyUI:
         else:
             self.progress.set_value(0, ANIM_OFF)
         self.time_label.set_text("{} / {}".format(_fmt_ms(progress), _fmt_ms(duration)))
+        if hasattr(self, "mini_progress"):
+            self.mini_progress.set_value(
+                int(min(progress, duration) * 1000 / duration) if duration else 0,
+                ANIM_OFF,
+            )
 
     def _shown_progress(self):
         base = self._progress_base
@@ -3223,6 +3350,27 @@ class SpotifyUI:
         else:
             self.album_save_btn.add_flag(lv.obj.FLAG.HIDDEN)
 
+    def _sync_mini_art(self, path):
+        """Share the decoded cover image with the compact playback bar."""
+        mini = getattr(self, "mini_art", None)
+        if mini is None:
+            return
+        mini.path = path
+        mini._descriptor = self.cover_art._descriptor
+        mini._data = self.cover_art._data
+        mini.src = mini._descriptor
+        if mini._descriptor is not None:
+            mini.image.set_src(mini._descriptor)
+            mini.image.set_scale(256)
+            mini.image.center()
+            mini.image.remove_flag(lv.obj.FLAG.HIDDEN)
+            mini.placeholder.add_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            mini.image.add_flag(lv.obj.FLAG.HIDDEN)
+            mini.placeholder.set_text("No cover art" if not path else "Cover unavailable")
+            mini.placeholder.remove_flag(lv.obj.FLAG.HIDDEN)
+            mini.placeholder.center()
+
     def update_now_playing(self, state):
         self._now_state = state
         self._progress_base = (state.get("progress_ms") or 0, time.ticks_ms())
@@ -3238,6 +3386,10 @@ class SpotifyUI:
         self._update_aux_controls(state)
         self.set_device(state.get("device") or "")
         self.cover_art.set_art(state.get("art_path"))
+        self._sync_mini_art(state.get("art_path"))
+        if hasattr(self, "mini_track_label"):
+            self.mini_track_label.set_text(state["track"] or "Nothing playing")
+            self.mini_artist_label.set_text(state["artist"] or "")
 
         duration = state["duration_ms"] or 0
         progress = state["progress_ms"] or 0
@@ -3268,6 +3420,15 @@ class SpotifyUI:
                 "{} / {}".format(_fmt_ms(progress), _fmt_ms(duration))
             )
 
+        mini_seek_held = self._seek_hold_until and time.ticks_diff(
+            self._seek_hold_until, time.ticks_ms()
+        ) >= 0
+        if hasattr(self, "mini_progress") and not self._seek_dragging and not mini_seek_held:
+            self.mini_progress.set_value(
+                int(progress * 1000 / duration) if duration else 0,
+                ANIM_OFF,
+            )
+
         self._style_play(bool(state["playing"]))
 
         if not self._device_startup_checked:
@@ -3280,12 +3441,17 @@ class SpotifyUI:
         self._restyle(
             "shuffle", shuffle, lambda: _style_chip(self.shuffle_btn, self.shuffle_label, active=shuffle)
         )
+        if hasattr(self, "mini_shuffle_btn"):
+            _style_chip(self.mini_shuffle_btn, self.mini_shuffle_label, active=shuffle)
 
         repeat = state.get("repeat") or "off"
 
         def style_repeat():
             self.repeat_label.set_text("1" if repeat == "track" else lv.SYMBOL.LOOP)
             _style_chip(self.repeat_btn, self.repeat_label, active=repeat != "off")
+            if hasattr(self, "mini_repeat_btn"):
+                self.mini_repeat_label.set_text("1" if repeat == "track" else lv.SYMBOL.LOOP)
+                _style_chip(self.mini_repeat_btn, self.mini_repeat_label, active=repeat != "off")
 
         self._restyle("repeat", repeat, style_repeat)
 
