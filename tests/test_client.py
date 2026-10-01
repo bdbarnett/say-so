@@ -118,6 +118,30 @@ class LocalEarfulBridgeTest(unittest.TestCase):
             {"uri": "spotify:track:fixture", "position": 1234},
         ])
 
+    def test_local_state_and_volume_surface(self):
+        class Device:
+            name = "earful"
+            device_id = "earful-id"
+            active = True
+            playing = False
+            volume = 0
+            track = "spotify:track:fixture"
+            position = 15000
+            duration = 180000
+            playlist = "spotify:playlist:agents"
+
+            def __init__(self):
+                self.volume_calls = []
+
+        device = Device()
+        adapter = EarfulAdapter(device)
+        adapter.set_volume(100)
+        self.assertEqual(device.volume, 100)
+        state = adapter.state()
+        self.assertEqual(state["device_id"], "earful-id")
+        self.assertEqual(state["position_ms"], 15000)
+        self.assertEqual(state["context"], "spotify:playlist:agents")
+
 
 if __name__ == "__main__":
     unittest.main()
