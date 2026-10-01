@@ -3603,8 +3603,10 @@ class SpotifyUI:
                 )
 
     def _playback_flags(self, state):
-        parts = []
+        context_type = state.get("context_type")
+        context_name = state.get("context_name") or ""
+        if context_type:
+            label = _label_case(context_type)
+            return "{}: {}".format(label, context_name) if context_name else label
         item_type = state.get("item_type")
-        if item_type:
-            parts.append(_label_case(item_type))
-        return " | ".join(parts)
+        return _label_case(item_type) if item_type else ""

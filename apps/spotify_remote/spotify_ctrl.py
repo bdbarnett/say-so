@@ -261,6 +261,7 @@ class SpotifyController:
         self._cached_artists = ()
         self._cached_active_device = None
         self._cached_active_device_at = 0
+        self._context_name_cache = {}
 
     def _ensure_scopes_on_403(self, error):
         if not self._is_scope_error(error):
@@ -289,6 +290,9 @@ class SpotifyController:
             "item_id": None,
             "item_uri": None,
             "item_type": None,
+            "context_type": None,
+            "context_name": "",
+            "context_uri": None,
             "album_id": None,
             "album_uri": None,
             "saved": None,
@@ -331,6 +335,14 @@ class SpotifyController:
         art_path = None
         saved = None
         album_saved = None
+        context_type = None
+        context_name = ""
+        context_uri = None
+
+        context = getattr(current, "context", None)
+        if context is not None:
+            context_type = getattr(context, "type", None)
+            context_uri = getattr(context, "uri", None)
 
         if item is not None:
             item_id = getattr(item, "id", None)
@@ -353,38 +365,52 @@ class SpotifyController:
                 if show is not None:
                     album_name = show.name or ""
                 art_url = self._best_image_url(getattr(item, "images", ()))
-            if art_url:
-                art_path = self.art_cache.path_for_url(art_url)
 
-            if item_type == "track" and item_id:
-                saved = self._track_saved(item_id)
-            if album_id:
-                album_saved = self._album_saved(album_id)
-            if item_type == "track" and artists:
-                if item_id and item_id == self._cached_artist_track_id:
-                    artists = self._cached_artists
-                else:
-                    uris = []
+        if context_type == "album":
+            context_name = album_name
+        elif context_type == "playlist" and context_uri:
+            context_id = context_uri.rsplit(":", 1)[-1]
+            cached = getattr(self, "_context_name_cache", {}).get(context_uri)
+            if cached is None:
+                try:
+                    cached = self.client.playlist(context_id).name or ""
+                except Exception:
+                    cached = ""
+                self._context_name_cache[context_uri] = cached
+            context_name = cached
+
+        if art_url:
+            art_path = self.art_cache.path_for_url(art_url)
+
+        if item_type == "track" and item_id:
+            saved = self._track_saved(item_id)
+        if album_id:
+            album_saved = self._album_saved(album_id)
+        if item_type == "track" and artists:
+            if item_id and item_id == self._cached_artist_track_id:
+                artists = self._cached_artists
+            else:
+                uris = []
+                for artist_entry in artists:
+                    uri = artist_entry.get("uri")
+                    if uri:
+                        uris.append(uri)
+                if uris:
+                    followed_map = self.library_contains_batch(uris)
+                    enriched = []
                     for artist_entry in artists:
-                        uri = artist_entry.get("uri")
-                        if uri:
-                            uris.append(uri)
-                    if uris:
-                        followed_map = self.library_contains_batch(uris)
-                        enriched = []
-                        for artist_entry in artists:
-                            entry = {
-                                "id": artist_entry["id"],
-                                "name": artist_entry["name"],
-                                "uri": artist_entry.get("uri"),
-                            }
-                            uri = entry.get("uri")
-                            if uri in followed_map:
-                                entry["followed"] = followed_map[uri]
-                            enriched.append(entry)
-                        artists = tuple(enriched)
-                    self._cached_artist_track_id = item_id
-                    self._cached_artists = artists
+                        entry = {
+                            "id": artist_entry["id"],
+                            "name": artist_entry["name"],
+                            "uri": artist_entry.get("uri"),
+                        }
+                        uri = entry.get("uri")
+                        if uri in followed_map:
+                            entry["followed"] = followed_map[uri]
+                        enriched.append(entry)
+                    artists = tuple(enriched)
+                self._cached_artist_track_id = item_id
+                self._cached_artists = artists
 
         device = ""
         device_id = None
@@ -403,6 +429,9 @@ class SpotifyController:
             "item_id": item_id,
             "item_uri": item_uri,
             "item_type": item_type,
+            "context_type": context_type,
+            "context_name": context_name,
+            "context_uri": context_uri,
             "album_id": album_id,
             "album_uri": album_uri,
             "saved": saved,
