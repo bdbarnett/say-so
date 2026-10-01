@@ -863,7 +863,9 @@ class SpotifyUI:
                 self.volume_popup,
             ):
                 widget.add_flag(lv.obj.FLAG.HIDDEN)
-            self._build_mini_player(parent, content_x, height - footer_h, width - content_x, footer_h)
+            # The playback rail spans the full LCD width, including the
+            # otherwise unused lower-left corner beneath the navigation rail.
+            self._build_mini_player(parent, 0, height - footer_h, width, footer_h)
 
         self._list_w = content_width - 16
         self._hub_y = PANEL_HEADER_H
@@ -1071,8 +1073,8 @@ class SpotifyUI:
         play_size = 40
         gap = 4
         transport_width = control_size * 4 + play_size + gap * 4
-        queue_width = 38
-        device_width = 88
+        queue_width = control_size
+        device_width = control_size
         mute_width = 34
         volume_width = 78
         extras_width = queue_width + device_width + mute_width + volume_width + gap * 3
@@ -1083,17 +1085,18 @@ class SpotifyUI:
 
         self.mini_track_label = lv.label(bar)
         self.mini_track_label.set_width(text_width)
+        self.mini_track_label.set_height(34)
         self.mini_track_label.set_long_mode(LABEL_LONG_DOT)
         self.mini_track_label.set_style_text_color(_hex(TEXT), 0)
         self.mini_track_label.set_text("Nothing playing")
-        self.mini_track_label.align(lv.ALIGN.TOP_LEFT, text_x, 9)
+        self.mini_track_label.align(lv.ALIGN.TOP_LEFT, text_x, 5)
 
         self.mini_artist_label = lv.label(bar)
         self.mini_artist_label.set_width(text_width)
         self.mini_artist_label.set_long_mode(LABEL_LONG_DOT)
         self.mini_artist_label.set_style_text_color(_hex(MUTED), 0)
         self.mini_artist_label.set_text("")
-        self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 28)
+        self.mini_artist_label.align(lv.ALIGN.TOP_LEFT, text_x, 40)
 
         timestamp_width = 40
         self.mini_elapsed_label = lv.label(bar)
@@ -1148,7 +1151,7 @@ class SpotifyUI:
         tx += control_size + gap
 
         self.mini_queue_btn, self.mini_queue_label = self._row_button(
-            bar, getattr(lv.SYMBOL, "LIST", "Queue"), tx, queue_width, control_size
+            bar, getattr(lv.SYMBOL, "PLAY", "Queue"), tx, queue_width, control_size
         )
         self.mini_queue_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
         tx += queue_width + gap
@@ -1157,8 +1160,6 @@ class SpotifyUI:
         self.mini_device_btn.set_size(device_width, control_size)
         self.mini_device_btn.align(lv.ALIGN.TOP_LEFT, tx, (height - control_size) // 2)
         self.mini_device_label = lv.label(self.mini_device_btn)
-        self.mini_device_label.set_width(device_width - 8)
-        self.mini_device_label.set_long_mode(LABEL_LONG_DOT)
         self.mini_device_label.set_text(getattr(lv.SYMBOL, "DRIVE", lv.SYMBOL.SETTINGS))
         self.mini_device_label.center()
         _style_chip(self.mini_device_btn, self.mini_device_label, active=False, fresh=True)
