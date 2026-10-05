@@ -98,9 +98,15 @@ firmware, LVGL's TJPGD on CPython. Without one the view shows
 ## Frozen into firmware
 
 [`manifest.py`](../../manifest.py) at the repo root freezes sayso and this
-app. [`manifests/kitchen-sink-earful.py`](../../manifests/kitchen-sink-earful.py)
-adds them to the PyDevices kitchen sink and earful, for a `micropython.exe`
-(or board image) that is both the remote and the speaker. Run it from any
+app. Name this repo by path in a micropython-pydevices build, with earful and
+every PyDevices module, for a `micropython.exe` (or board image) that is both
+the remote and the speaker:
+
+```bash
+/home/brad/gh/pydevices/micropython-pydevices/build_mp.py --port windows --variant pydevices \
+    --modules all,/home/brad/gh/bdbarnett/earful,/home/brad/gh/bdbarnett/say-so
+```
+ Run it from any
 directory holding `sayso.local.json` and `tokens.json`; the art caches are
 written there too:
 
