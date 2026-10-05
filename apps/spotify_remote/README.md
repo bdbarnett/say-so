@@ -104,7 +104,7 @@ the remote and the speaker:
 
 ```bash
 /home/brad/gh/pydevices/micropython-pydevices/build_mp.py --port windows --variant pydevices \
-    --modules all,/home/brad/gh/bdbarnett/earful,/home/brad/gh/bdbarnett/say-so,/home/brad/gh/pydevices/pydevices/board_configs/desktop
+    --modules all,/home/brad/gh/bdbarnett/earful,/home/brad/gh/bdbarnett/say-so
 ```
 
 Run it from any directory holding `sayso.local.json` and `tokens.json`; the art caches are
