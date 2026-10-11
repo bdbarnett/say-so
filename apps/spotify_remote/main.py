@@ -23,7 +23,7 @@ if _APPS_DIR.rstrip("/").endswith("/apps"):
         if _path not in sys.path:
             sys.path.insert(0, _path)
 
-from displaydev import env_set  # NOQA
+from boarddev import env_set  # NOQA
 
 # This desktop UI owns its logical display geometry. Set these before
 # display_driver imports board_config and constructs the display.
