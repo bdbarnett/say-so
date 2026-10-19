@@ -25,12 +25,14 @@ CRED_FILE = "earful.credentials"
 PUMP_RING_SECONDS = 4
 # How long to wait for a hosted USB sound card to enumerate.
 USB_FIND_MS = 15000
-# The USB host ring between earful and the bus (usbif#36). earful drains into
-# it from its own task (usbif#43), so it no longer has to outlast the
-# interpreter's stalls -- earful's ~5 s ring does that. What it holds plays
-# after a pause or a skip, so it is short: at 2 s, pause took 2 s to be heard
-# on the LCD-7 (2026-09-25).
+# The USB host ring between earful and the bus. When the speaker offers a C
+# sink, earful drains into it from its own task, so the ring no longer has to
+# outlast the interpreter's stalls -- earful's ~5 s ring does that -- and what
+# it holds plays after a pause or a skip, so it is short: at 2 s, pause took
+# 2 s to be heard on the LCD-7 (2026-09-25). Without one, this thread feeds
+# the ring and it must hold the longest stall.
 USB_RING_MS = 400
+USB_RING_VM_MS = 2000
 # earful stamps what it tells Spotify with the wall clock; hours off, the
 # phone showed a playing speaker stopped at 0:00 (LCD-7, 2026-09-25: a serial
 # tool had set the RTC to local time). A board syncs NTP at Wi-Fi connect;
@@ -117,88 +119,77 @@ def _pump_output(fmt):
 
 
 class _UsbPCM:
-    """earful's view of a hosted USB sound card (usbif.uac_audio output).
+    """earful's view of a hosted USB sound card (usb.host.audio's Speaker).
 
-    The C host driver drains the ring onto the bus in real time. earful
-    writes at most space() and uses try_write(), which never waits for the
-    bus, so a full ring can never stall the UI.
+    The host drains the ring onto the bus in real time. earful writes at most
+    space(), and a write never waits for the bus, so a full ring can never
+    stall the UI. The card's volume is earful's own: it scales the samples it
+    writes, so set_volume has nothing to do here.
     """
 
-    def __init__(self, host, out):
-        self._host = host  # keep the USB host running while we play
-        self._out = out
+    def __init__(self, speaker):
+        self._spk = speaker
+        if hasattr(speaker, "c_sink"):
+            # earful drains into this from its own task, so the VM no longer
+            # moves the bytes. Without it earful keeps its VM pump.
+            self.c_sink = speaker.c_sink
 
     def write(self, buf):
-        return self._out.try_write(buf)
+        return self._spk.write(buf)
 
     def space(self):
-        return self._out.space()
+        return self._spk.space()
 
     def queued_size(self):
-        return self._out.queued_size()
+        return self._spk.queued()
 
     def service(self):
-        self._out.service()
+        pass
 
     def set_volume(self, volume):
-        self._out.set_volume(volume)
-
-    def c_sink(self):
-        # earful drains into this from its own task, so the VM no longer
-        # moves the bytes (usbif#43). A usbif without it raises
-        # AttributeError here, and earful keeps its VM pump.
-        return self._out.c_sink()
+        pass
 
     def open(self):
-        self._out.open()
+        self._spk.start()
 
     def close(self):
-        self._out.close()
-        self._host.stop()
+        import usb.core
+
+        self._spk.stop()
+        usb.core.stop()
 
 
 def _usb_output(fmt):
     """A hosted USB sound card at fmt, or None when there is none.
 
     No resampling: the card must offer fmt's rate (earful's is 44.1 kHz), and
-    uac_audio.output raises, listing what the card does offer, if it doesn't.
+    Speaker raises, listing what the card does offer, if it doesn't.
     """
     try:
         import time
 
-        import usbif.auto
-        from usbif import uac, uac_audio
+        import usb.core
+        from usb.host.audio import Speaker
     except ImportError:
-        print("local speaker: no usbif in this firmware for a USB sound card")
+        print("local speaker: this firmware has no usb-core and usb-host-audio for a USB sound card")
         return None
-    host = usbif.auto.host(classes=("uac",)).start()
+    usb.core.start(classes=("uac",))
+    ring_ms = USB_RING_MS if hasattr(Speaker, "c_sink") else USB_RING_VM_MS
     deadline = ticks_add(ticks_ms(), USB_FIND_MS)
     while ticks_diff(deadline, ticks_ms()) > 0:
-        for dev_id, streams in uac_audio.audio_devices():
-            if any(s.direction == uac.OUT for s in streams):
-                try:
-                    out = uac_audio.output(
-                        dev_id,
-                        rate=fmt.rate,
-                        channels=fmt.channels,
-                        bits=fmt.bits,
-                        ring_ms=USB_RING_MS,
-                    )
-                except TypeError:
-                    host.stop()
-                    print("local speaker: this firmware's usbif predates ring_ms "
-                          "(usbif#36); rebuild with current usbif")
-                    return None
-                except ValueError as error:
-                    # Says what the card does offer; usbif#35 adds 44.1 kHz
-                    # to the P4's sound card.
-                    host.stop()
-                    print("local speaker: USB sound card unusable: %s" % (error,))
-                    return None
-                print("local speaker: USB sound card, device %s" % (dev_id,))
-                return _UsbPCM(host, out)
+        dev = usb.core.find(custom_match=Speaker.match)
+        if dev is not None:
+            try:
+                out = Speaker(dev, rate=fmt.rate, channels=fmt.channels, bits=fmt.bits, ring_ms=ring_ms)
+            except ValueError as error:
+                # Says what the card does offer.
+                usb.core.stop()
+                print("local speaker: USB sound card unusable: %s" % (error,))
+                return None
+            print("local speaker: USB sound card, %s" % (dev.product,))
+            return _UsbPCM(out)
         time.sleep_ms(250)
-    host.stop()
+    usb.core.stop()
     print("local speaker: no USB sound card found")
     return None
 
@@ -266,7 +257,7 @@ def start(name, bitrate=160, output=None, volume=None):
 
     output: None for this machine's own audio (the board's, through the audio
     pump where the firmware has it, or the host's), "usb" for a hosted USB
-    sound card (an S3 without a codec driving a P4 running soundcard.py).
+    sound card (an S3 without a codec driving a board that is a USB speaker).
     volume: the speaker's volume (0-100) before anything sets one; None keeps
     earful's default (100).
     """

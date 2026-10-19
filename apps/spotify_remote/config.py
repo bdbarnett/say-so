@@ -52,7 +52,7 @@ COMPACT_ROW_ACTIONS = False
 LOCAL_SPEAKER = None
 
 # Where the local speaker's audio goes: None for this machine's own output,
-# "usb" for a hosted USB sound card (e.g. a P4 running usbif's soundcard.py).
+# "usb" for a hosted USB sound card (e.g. a P4 that is a USB speaker).
 LOCAL_SPEAKER_OUTPUT = None
 
 # The local speaker's volume (0-100) when it starts; None keeps earful's
