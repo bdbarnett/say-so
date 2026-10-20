@@ -41,6 +41,7 @@ transport helpers, read methods, selected write methods, examples, and live test
 - `HydrationError` for contextual object-layer fetch failures
 - MicroPython on Linux validated with discovery scripts and the `spotify_remote` app
 - `spotify_remote` LVGL MicroPython app (`apps/spotify_remote/`)
+- `spotify_remote` follows a local earful speaker through its state events (`Device.events()`): while the board is Spotify's active device the screen shows each pause, skip and seek as earful reports it, and the Web API is only asked when playback moves elsewhere
 - `transport.get_bytes()` for binary downloads (for example cover art)
 - Socket-based OAuth callback fallback for MicroPython
 - Offline transport tests in `tests/test_transport.py`
