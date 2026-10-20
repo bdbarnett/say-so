@@ -70,6 +70,10 @@ _poll_skip = 0
 
 def poll(ui, controller):
     """Refresh now-playing on the worker; the screen updates when it lands."""
+    if _following_speaker():
+        # This board's earful is the active device and tells us what changes
+        # (on_speaker_events); the Web API would only say it again, later.
+        return
 
     def done(state, error):
         global _poll_skip
@@ -155,6 +159,39 @@ def _poll_timer(_timer):
     if not ui.worker.pending("poll"):
         poll(ui, controller)
 
+
+def _following_speaker():
+    return speaker is not None and speaker.has_events and speaker.active
+
+
+def on_speaker_events(events):
+    """earful's state changes, on the VM thread: show them at once.
+
+    While this speaker is active the screen follows it and the Web API isn't
+    polled. When playback moves to another device, polling takes over again.
+    """
+    if not speaker.active:
+        if any(kind == "active" for kind, _ in events):
+            poll(ui, controller)
+        return
+    state = speaker.now_playing(ui._now_state, events)
+    url = state.get("art_url")
+    if url and not state.get("art_path"):
+        state["art_path"] = controller.art_cache.cached_path(url)
+        if not state["art_path"]:
+            # A download from Spotify's image CDN, not a Web API call.
+            def done(path, error):
+                if error is None and path and ui._now_state.get("art_url") == url:
+                    shown = dict(ui._now_state)
+                    shown["art_path"] = path
+                    ui.update_now_playing(shown)
+
+            ui.worker.submit(lambda: controller.art_cache.path_for_url(url), done, key="speaker-art")
+    ui.update_now_playing(state)
+
+
+if speaker is not None and speaker.has_events:
+    speaker.on_events = on_speaker_events
 
 lv.timer_create(_poll_timer, 5000, None)
 

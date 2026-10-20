@@ -6,6 +6,10 @@ like any other speaker. Audio goes out through audiodev on the VM thread,
 pumped from an LVGL timer: earful's C thread fills its PCM ring, and only
 this thread may write to the audio output.
 
+When this earful posts state events (Device.events()), the speaker drains
+them on the same timer and hands them to on_events, so while it is the active
+device the remote can follow it without asking the Web API (now_playing()).
+
 Pairing is earful's: the phone pairs once over Zeroconf and earful keeps the
 credentials. On a host its C side reads them from ~/.earful/credentials (or
 earful.credentials in the working directory). On a board, Python hands them
@@ -206,6 +210,14 @@ class LocalSpeaker:
         self._host = sys.platform != "esp32"
         self._saved = earful.has_credentials()
         self._ticks = 0
+        # earful's state events, where this build has them: a call that
+        # returns an empty tuple, without allocating, while nothing changes.
+        self._events = getattr(device, "events", None)
+        self.has_events = self._events is not None
+        # True while this speaker is Spotify's active device, by its events.
+        self.active = False
+        # Called on the VM thread with each batch: [(kind, value), ...].
+        self.on_events = None
         self._timer = lv.timer_create(self._pump, PUMP_MS, None)
         self._ntp_timer = None
         if sys.platform == "esp32":
@@ -229,6 +241,14 @@ class LocalSpeaker:
             if self._pcm.queued_size() < 4 * len(self._silence):
                 self._pcm.write(self._silence)
         self._pcm.service()
+        if self._events is not None:
+            events = self._events()
+            if events:
+                for kind, value in events:
+                    if kind == "active":
+                        self.active = bool(value)
+                if self.on_events is not None:
+                    self.on_events(events)
         self._ticks += 1
         if self._ticks % 100 == 0:
             self._save_board_credentials()
@@ -243,6 +263,49 @@ class LocalSpeaker:
                 file.write(self._earful.credentials())
         except OSError as error:
             print("local speaker: credentials not saved: %r" % (error,))
+
+    def now_playing(self, base=None, events=()):
+        """The remote's now-playing state, as earful has it.
+
+        base is the last state shown: what earful can't know (whether the
+        track is saved, its artists' ids, the context) is kept from it while
+        the track is the same and cleared when it changes. events are the
+        (kind, value) pairs that prompted this; their values win over the
+        device's attributes, which can lag a skip by a moment. Art is the
+        URL only: the caller turns it into a cached file off the UI thread.
+        """
+        dev = self.device
+        state = dict(base or {})
+        uri = dev.track
+        if uri != state.get("item_uri"):
+            for key in ("saved", "album_saved", "album_id", "album_uri", "art_path"):
+                state[key] = None
+            state["artists"] = ()
+        state["item_uri"] = uri
+        state["item_id"] = uri.rsplit(":", 1)[-1] if uri else None
+        state["item_type"] = uri.split(":")[1] if uri and uri.count(":") >= 2 else None
+        state["track"] = dev.title or ""
+        state["artist"] = dev.artist or ""
+        state["album"] = dev.album or ""
+        state["art_url"] = dev.art
+        playing = bool(dev.playing)
+        position = dev.position or 0
+        duration = dev.duration or 0
+        for kind, value in events:
+            if kind == "playing":
+                playing = bool(value)
+            elif kind == "position":
+                position = value
+            elif kind == "track" and value:
+                duration = value
+        state["playing"] = playing
+        state["progress_ms"] = position
+        state["duration_ms"] = duration
+        state["volume"] = dev.volume
+        if state.get("device") != self.name:
+            state["device_id"] = None
+        state["device"] = self.name
+        return state
 
     def stop(self):
         self._timer.delete()
