@@ -136,6 +136,12 @@ and shows up in **Devices** under that name. Pick it there to play through
 this machine's audio output. Everything else in the UI then controls it.
 Without earful, or with no name given, the remote runs as before.
 
+While this speaker is the one playing, the screen follows earful's own state
+events: a pause, a skip, a seek or a volume change from any Spotify app shows
+at once, and the remote stops polling the Web API. When playback moves to
+another device, polling every 5 s takes over again. An earful build without
+state events (`Device.events()`) is polled as before.
+
 On a board with no codec (an ESP32-S3 panel), set `LOCAL_SPEAKER_OUTPUT =
 "usb"` and the speaker plays through a hosted USB sound card instead, such as
 a P4 that is a USB speaker (usb-device-audio). It needs the `usb-core` and
