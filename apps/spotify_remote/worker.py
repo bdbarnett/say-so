@@ -137,11 +137,14 @@ class Worker:
         gil.set_worker_thread()
         # One step below the UI thread, where the firmware lets us: at equal
         # priority the GIL never passes back to the UI while this computes.
+        # Never to priority 0, though: that is FreeRTOS's idle priority, and
+        # a UI thread that sleeps in short slices (the ESP32-P4's foreground
+        # loop) leaves it no time at all, so no request ever ran (#5).
         try:
             import earful
 
             prio = earful.thread_priority()
-            if prio:
+            if prio and prio > 1:
                 earful.thread_priority(prio - 1)
         except (ImportError, AttributeError, ValueError):
             pass
