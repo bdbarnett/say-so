@@ -1,5 +1,7 @@
 # sayso
 
+> **Moved.** sayso now lives in [PyDevices/pydevices](https://github.com/PyDevices/pydevices/tree/main/sayso), its home from here on. This repository is archived and gets no more changes.
+
 Small Spotify Web API client experiments for CPython, MicroPython, and CircuitPython.
 
 The current focus is a lightweight object layer:
